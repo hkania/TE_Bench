@@ -1,0 +1,14 @@
+executor: slurm
+jobscript: slurm-jobscript.sh
+
+jobs: 10 #adaptable
+local-cores: 1 #adaptable
+latency-wait: 60 #adaptable
+use-conda: true
+use-singularity: false
+printshellcmds: true #adaptable
+default-resources:
+    mem_mb: 4000 #adaptable
+    runtime: 60 #adaptable
+slurm-keep-successful-logs: true #You can choose whether or not to invoke this for Snakefile_Option3, Option4, and Option5. It is necessary for Option1 and Option2.
+slurm-logdir: "log/" #Recommended for easy tracking of the log files, but you can choose whether or not to invoke this.

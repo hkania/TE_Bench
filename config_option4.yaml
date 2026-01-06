@@ -1,0 +1,15 @@
+ref_csv_ext: "_Garlic.csv"
+
+RM2_gff_ext: "_RM2.gff"
+
+RM2_fasta_ext: "_RM2.fa"
+
+EG_gff_ext: "_EG.gff"
+
+EDTA_gff_ext: "_EDTA.gff"
+
+seq_len: 100000000
+
+inserts_dir: "input/option4"
+
+extras: "Unknown"

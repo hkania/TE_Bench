@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software in research, please cite it."
+title: "TE Benchmark"
+version: "1.0.0"
+date-released: "2025-01-01"
+
+authors:
+  - family-names: "Kania"
+    given-names: "Hannah"
+    orcid: "https://orcid.org/0000-0003-3420-4389"
+  - family-names: "Seifert"
+    given-names: "Sierra"
+
+url: "https://github.com/sierraseifert/TE_BENCHMARK_SNAKEMAKE"
+
+preferred-citation:
+  type: software
+  title: "TE Benchmark"
+  authors:
+  - family-names: "Kania"
+    given-names: "Hannah"
+    orcid: "https://orcid.org/0000-0003-3420-4389"
+  - family-names: "Seifert"
+    given-names: "Sierra"
+  version: "1.0.0"
+  url: "https://github.com/sierraseifert/TE_BENCHMARK_SNAKEMAKE"
+  year: 2025

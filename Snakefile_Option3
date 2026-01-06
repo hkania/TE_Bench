@@ -1,0 +1,79 @@
+import glob
+import os
+
+# Load the config file
+configfile: "config_option3.yaml"
+
+#set the updtream option variable
+option = config["option"]
+
+# Extract all sequence names from fasta files
+input_dir = f"input/option{option}"
+fasta_files = glob.glob(os.path.join(input_dir, "*.fa"))
+seq_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+
+localrules: garlic_to_csv
+
+rule all:
+    input:
+        [
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_{num}_Garlic.csv"),
+                seq_name=seq_names,
+                num=range(1, config["num_sequences"] + 1)
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}/gffs/{seq_name}_{num}_Garlic.gff"),
+                seq_name=seq_names,
+                num=range(1, config["num_sequences"] + 1)
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/fake_fastas/{seq_name}/{seq_name}_split"),
+                seq_name=seq_names
+            )
+        ]
+
+rule run_garlic_gff_generation:
+    input:
+        log=config["GARLIC_LOG_FILE"],
+        garlic_in_directory=expand(
+            os.path.join(workflow.basedir, "output/fake_fastas/{seq_name}/{seq_name}_split"),
+            seq_name=seq_names
+        )
+    output:
+        gff=expand(
+                os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}/gffs/{seq_name}_{num}_Garlic.gff"),
+                seq_name=seq_names,
+                num=range(1, config["num_sequences"] + 1)
+            )
+    params:
+        model=seq_names,
+        end=config["num_sequences"] - 1,
+        awk_script_1=os.path.join(workflow.basedir, "scripts/sequence_start_stop"),
+        awk_script_2=os.path.join(workflow.basedir, "scripts/nested_gff"),
+        garlic_out_directory=expand(
+            os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}"),
+            seq_name=seq_names
+        ),
+        garlic_in_directory=expand(
+            os.path.join(workflow.basedir, "output/fake_fastas/{seq_name}/{seq_name}_split"),
+            seq_name=seq_names
+        )
+    conda:
+        "envs/blast2.yaml"
+    resources:
+        mem_mb = 10000,
+        runtime=1440
+    threads: 4
+    shell:
+        """
+        ./scripts/garlic_gff_gen.sh {params.end} {params.model} {input.log} {params.garlic_out_directory} {params.garlic_in_directory} {params.awk_script_1} {params.awk_script_2}
+        """
+         
+rule garlic_to_csv:
+    input:
+        gff=os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}/gffs/{seq_name}_{num}_Garlic.gff")
+    output:
+        csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_{num}_Garlic.csv")
+    script:
+        "scripts/Garlic_gff_to_csv.R"

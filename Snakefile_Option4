@@ -1,0 +1,290 @@
+# Load the config file
+configfile: "config_option4.yaml"
+
+# Assumes the user has already run Option3 to generate the Garlic csv file, or provides another reference CSV file formatted with
+# the same columns as Garlic. This reference CSV file MUST be in the outputs/cleaned_csvs/{seq_name}/ directory and you need to
+# specify the extension (ie. _Garlic.csv) unless you are comfortable editing the workflow below to point to your reference CSV of choice.
+
+# Refer to the README.md file on the associated GitHub repository for additional instructions.
+
+import glob
+import os
+
+gff_files = glob.glob("input/option4/*.gff")
+
+seq_names = sorted(set(["_".join(os.path.splitext(os.path.basename(f))[0].split("_")[:-1]) for f in gff_files]))
+program_names = sorted(set([os.path.splitext(os.path.basename(f))[0].split("_")[-1] for f in gff_files]))
+
+# Rule to ensure all CSV outputs, visualizations, and the statistics file are generated
+
+rule all:
+    input:
+        [
+            expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/{seq_name}_stats.txt"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_plot_stats.pdf"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_{prog}.csv"),
+                seq_name=seq_names,
+                prog=program_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{seq_name}_nest.csv"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{seq_name}_host.csv"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_{prog}_coverage_piechart.pdf"),
+                seq_name=seq_names,
+                prog=program_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/{seq_name}_{prog}_cov.csv"),
+                seq_name=seq_names,
+                prog=program_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/{seq_name}_ref_perc_iden.csv"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_{prog}_perc_id.pdf"),
+                seq_name=seq_names,
+                prog=program_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_nesting.pdf"),
+                seq_name=seq_names
+            )
+        ]
+
+# Generate CSV from RepeatModeler2 Output; requires .gff file from RepeatModeler2 and consensi.fa.classified file from associated RepeatMasker run
+rule rm_to_csv:
+    input:
+        gff=os.path.join(workflow.basedir, "input/option4/{seq_name}" + config["RM2_gff_ext"]),
+        fasta=os.path.join(workflow.basedir, "input/option4/{seq_name}" + config["RM2_fasta_ext"])
+    output:
+        csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_RM2.csv")
+    script:
+        "scripts/RM2_gff_to_csv.R"
+
+# Generate CSV from Earl Grey Output
+rule eg_to_csv:
+    input:
+        gff=os.path.join(workflow.basedir, "input/option4/{seq_name}" + config["EG_gff_ext"])
+    output:
+        csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_EG.csv")
+    script:
+        "scripts/EG_gff_to_csv.R"
+
+# Generate CSV from EDTA
+rule edta_to_csv:
+    input:
+        gff=os.path.join(workflow.basedir, "input/option4/{seq_name}" + config["EDTA_gff_ext"])
+    output:
+        csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_EDTA.csv")
+    script:
+        "scripts/EDTA_gff_to_csv.R"
+
+#Generate CSVs for nested elements, including full length elements (hosts) and nested elements (nests)
+rule nest_analysis:
+    input:
+        csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}" + config["ref_csv_ext"])
+    output:
+        csv1=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{seq_name}_nest.csv"),
+        csv2=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{seq_name}_host.csv")
+    params:
+        seq_len=config["seq_len"]
+    shell:
+        """
+        python3 ./scripts/calculate_overlap_csvs.py {input.csv} {params.seq_len} {output.csv1} {output.csv2}
+        """
+
+# Define input csvs for the statistics calculation
+def stats_input_csvs(wildcards):
+    return expand(
+        os.path.join(
+            workflow.basedir,
+            "output/cleaned_csvs/{seq_name}/{seq_name}_{prog}.csv"
+        ),
+	seq_name=wildcards.seq_name,
+        prog=program_names
+    )
+
+# Generate statistics across the whole genome and all inserted elements
+rule calculate_statistics:
+    input:
+        tests=stats_input_csvs
+    output:
+        stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/{seq_name}_stats.txt")
+    params:
+        seq_len=config["seq_len"]
+    run:
+        import subprocess, glob, os, re
+        seq_name = wildcards.seq_name
+        ref_ext = config["ref_csv_ext"]
+        csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/*.csv")
+        if not csvs:
+            raise ValueError(f"No CSV files found for sequence {seq_name}")
+        ref_csvs = [f for f in csvs if ref_ext in os.path.basename(f)]
+        if not ref_csvs:
+            raise ValueError(f"No reference CSV found for {seq_name} with extension {ref_ext}")
+        for ref_csv in ref_csvs:
+            base = os.path.basename(ref_csv)
+            match = re.search(rf"{re.escape(ref_ext)}(?:_(.+))?\.csv$", base)
+            ref_type = match.group(1) if match else None
+            non_ref_csv = [f for f in csvs if f != ref_csv]
+
+        os.makedirs(os.path.dirname(output.stats), exist_ok=True)
+
+        cmd = [
+            "python3",
+            "./scripts/generate_stats.py",
+            ref_csv,
+            str(params.seq_len),
+            output.stats,
+        ] + non_ref_csv
+        subprocess.run(cmd, check=True)
+
+# Generate hexagon plot across the whole genome and all inserted elements
+rule generate_plot_stats:
+    input:
+        stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/{seq_name}_stats.txt")
+    output:
+        plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_plot_stats.pdf")
+    params:
+        coverage="Whole Genome"
+    shell:
+        """
+        python3 ./scripts/view_stats.py {input.stats} {output.plot} {wildcards.seq_name} {params.coverage:q}
+        """
+
+# Define the CSVs necessary for the nested analysis
+def nesting_test_csvs(wildcards):
+    return expand(
+        os.path.join(
+            workflow.basedir,
+            "output/cleaned_csvs/{seq_name}/coverage_csvs/{seq_name}_{prog}_cov.csv"
+        ),
+        seq_name=wildcards.seq_name,
+        prog=program_names
+    )
+
+# Generate nesting TE plots
+rule generate_nesting_plot:
+    input:
+        host=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{seq_name}_host.csv"),
+        nest=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{seq_name}_nest.csv"),
+        tests=nesting_test_csvs
+    output:
+        plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_nesting.pdf")
+    params:
+        seq_len=config["seq_len"]
+    run:
+        import glob, os, subprocess
+        seq_name = wildcards.seq_name
+
+        ref_ext = config["ref_csv_ext"]
+
+        csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/*.csv")
+        if not csvs:
+            raise ValueError(f"No CSV files found for sequence {seq_name}")
+        ref_csvs = [f for f in csvs if ref_ext in os.path.basename(f)]
+        if not ref_csvs:
+            raise ValueError(f"No reference CSV found for {seq_name} with extension {ref_ext}")
+        for ref_csv in ref_csvs:
+            base = os.path.basename(ref_csv)
+            match = re.search(rf"{re.escape(ref_ext)}(?:_(.+))?\.csv$", base)
+            ref_type = match.group(1) if match else None
+            non_ref_csv = [f for f in csvs if f != ref_csv]
+
+        cmd = [
+            "python3",
+            "./scripts/plot_nesting.py",
+            input.host,
+            input.nest,
+            str(params.seq_len),
+            output.plot,
+            seq_name,
+        ] + non_ref_csv
+        subprocess.run(cmd, check=True)
+
+
+# Build nested pie chart depicting total number of elements in reference file by TE type and percent of elements covered by each test pipeline
+rule coverage_pie_chart:
+    input:
+        test=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_{prog}.csv")
+    output:
+        cov_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/{seq_name}_{prog}_cov.csv"),
+        pdf=os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_{prog}_coverage_piechart.pdf")
+    params:
+        seq_len=config["seq_len"],
+        extras=config["extras"]
+    run:
+        import subprocess, glob, os, re
+
+        seq_name = wildcards.seq_name
+        prog = wildcards.prog
+        ref_ext = config["ref_csv_ext"]
+
+        csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/*.csv")
+
+        # Reference CSV
+        ref_csvs = [f for f in csvs if ref_ext in os.path.basename(f)]
+        if len(ref_csvs) != 1:
+            raise ValueError(f"Expected exactly 1 reference CSV, found: {ref_csvs}")
+        ref_csv = ref_csvs[0]
+
+        # Test CSV matching the current prog
+        test_csvs = [f for f in csvs if prog in os.path.basename(f)]
+        if len(test_csvs) != 1:
+            raise ValueError(f"Expected exactly 1 test CSV for prog {prog}, found: {test_csvs}")
+        test_csv = test_csvs[0]
+
+        cmd = [
+            "python3",
+            "./scripts/plot_covered.py",
+            seq_name,
+            output.pdf,
+            output.cov_csv,
+            str(params.seq_len),
+            ref_csv,
+            test_csv,
+            "params.extras"
+        ]
+        subprocess.run(cmd, check=True)
+
+# Calculate the percent identity of each inserted TE with its TE consensus (from RepBase or Dfam -- generated from RepeatMasker)
+rule calc_perc_identity:
+    input:
+        inserts=os.path.join(config["inserts_dir"] + "/{seq_name}.inserts"),
+        ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}" + config["ref_csv_ext"])
+    output:
+        identity_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/{seq_name}_ref_perc_iden.csv")
+    shell:
+        """
+        python3 ./scripts/create_new_csv_id_ana.py {input.inserts} {input.ref_csv} {output.identity_csv} 
+        """
+
+# Plot the percent identity by the percent coverage of the element for different TE classes/subclasses
+rule plot_perc_identity:
+    input:
+        identity_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/{seq_name}_ref_perc_iden.csv"),
+        test_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/{seq_name}_{prog}.csv")
+    output:
+        plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/plots/{seq_name}_{prog}_perc_id.pdf")
+    params:
+        seq_len=config["seq_len"],
+        extras=config["extras"]
+    shell:
+        """
+        python3 ./scripts/plot_identity_vs_coverage.py {input.identity_csv} {input.test_csv} {params.seq_len} {output.plot} {params.extras:q}
+        """
