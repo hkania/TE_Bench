@@ -747,6 +747,8 @@ This workflow was built using the Snakemake resources provided by
 
 [Mölder, F., Jablonski, K.P., Letcher, B., Hall, M.B., Tomkins-Tinch, C.H., Sochat, V., Forster, J., Lee, S., Twardziok, S.O., Kanitz, A., Wilm, A., Holtgrewe, M., Rahmann, S., Nahnsen, S., Köster, J., 2021. Sustainable data analysis with Snakemake. F1000Res 10, 33.](https://f1000research.com/articles/10-33/v2)
 
+Data and scripts provided by
+
 [Realistic artificial DNA sequences as negative controls for computational genomics. Caballero J, Smit AF, Hood L, Glusman G. Nucl. Acids Res. 2014 doi: 10.1093/nar/gku356 ](https://github.com/caballero/Garlic)
 
 [Kania, H. P., Seifert, S. A., & Yoder, A. D. (2025). Data from: A foundational benchmarking workflow for transposable element discovery pipelines. Duke Research Data Repository. https://doi.org/10.7924/r4m61sj94](https://doi.org/10.7924/r4m61sj94)
