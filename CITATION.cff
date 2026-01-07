@@ -14,17 +14,20 @@ authors:
     given-names: "Anne"
     orcid: "https://orcid.org/0000-0002-1781-9552"
 
-url: "https://github.com/sierraseifert/TE_BENCHMARK_SNAKEMAKE"
+url: "https://github.com/hkania/TE_Anno_Benchmark"
 
 preferred-citation:
   type: software
-  title: "TE Benchmark"
+  title: "TE Annotation Benchmark"
   authors:
   - family-names: "Kania"
     given-names: "Hannah"
     orcid: "https://orcid.org/0000-0003-3420-4389"
   - family-names: "Seifert"
     given-names: "Sierra"
+  - family-names: "Yoder"
+    given-names: "Anne"
+    orcid: "https://orcid.org/0000-0002-1781-9552"
   version: "1.0.0"
-  url: "https://github.com/sierraseifert/TE_BENCHMARK_SNAKEMAKE"
+  url: "https://github.com/hkania/TE_Anno_Benchmark"
   year: 2025
