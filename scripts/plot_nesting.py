@@ -228,7 +228,7 @@ def main():
     )
 
     ax_nest.set_title(
-        f"Coverage of {model} " r"$\it{Nest}$" "  TEs across programs",
+        f"Coverage of {model} " r"$\it{Nest}$" " TEs across programs",
         fontsize=18, fontweight="bold"
     )
 
