@@ -487,6 +487,16 @@ Use the following command to start your actual test run. It will take about 5 mi
 >  * Lines 94-199 if you did not run EarlGrey
 >  * Lines 102-109 if you did not run EDTA
 
+> Pay attention to the minimum percent identity to TE consensus in your sequence of interest (the default minimum in this workflow is 50%, which is typical of mammalian models). You can check your GARLIC reference percent identity CSV file using the following terminal command:
+> ```
+> cut -d, -f 9 {seq_name}_ref_perc_iden.csv | sort -n | head
+> ```
+> If you need to edit the minimum value to be plotted by the `plot_identity_vs_coverage.py` script, you can edit line 132.
+> ```
+> ax.set_xlim(50, 100)
+> ```
+> You can alternativly run the whole Snakefile and see if your data is cutoff on the lefthand side of the percent identity plots and adjust from there.
+
 You need to edit the config_option4.yaml file to reflect these aspects of your data:
 * the RepeatModeler2 annotation GFF extension (RM2_gff_ext) (ie. what proceeds your sequence name)
 * the RepeatModeler2 fasta extension (RM2_fasta_ext)
