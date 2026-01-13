@@ -6,7 +6,7 @@ The following is a guide on how to download and test the associated Snakemake wo
 
 * A general note to be careful with naming conventions if moving between the provided Snakefile options! **Before running any snakemake, be sure your config file(s) and input(s) match! You can perform a test run using the -n flag in Snakemake.**
 
-![All](https://github.com/hkania/TE_Anno_Benchmark/blob/3830f6f75222d2d67d4450ad2791a8ffbd72fe61/.images/Full_Workflow.png?raw=true)
+![All](https://github.com/hkania/TE_Anno_Benchmark/blob/54981b92e159ac9fcb393398fe1577809a11221f/.images/Full_Workflow.png?raw=true)
 # Snakefile Options
 There are multiple instances of Snakefiles available. 
 Each use case is detailed below with limited dependency install instructions and detailed command line execution instructions.
