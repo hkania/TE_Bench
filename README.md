@@ -1,6 +1,7 @@
 [![Snakemake](https://img.shields.io/badge/snakemake-≥9.11.4-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
 
-# Welcome to the Snakemake workflow associated with the manuscript *A Foundational Benchmarking Workflow for Transposable Element Discovery Pipelines* (submitted).
+# Welcome to TE_Bench
+## A Snakemake workflow associated with the manuscript *TE_Bench: A Foundational Benchmarking Workflow for Transposable Element Discovery Pipelines* (submitted).
 The following is a guide on how to download and test the associated Snakemake workflows. You can adapt the workflows to suit your data, and minimal instructions on how to do so are provided!
 * We regret we are unable to provide specific download instructions beyond those below. There are many resources available online if you run into computing environments beyond those described here.
 
