@@ -1,4 +1,4 @@
-name: snakemake_TE_BENCHMARK
+name: TE_Bench
 channels:
   - conda-forge
   - bioconda
