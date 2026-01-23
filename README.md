@@ -6,24 +6,24 @@ The following is a guide on how to download and test the associated Snakemake wo
 
 * A general note to be careful with naming conventions if moving between the provided Snakefile options! **Before running any snakemake, be sure your config file(s) and input(s) match! You can perform a test run using the -n flag in Snakemake.**
 
-![All](https://github.com/hkania/TE_Anno_Benchmark/blob/54981b92e159ac9fcb393398fe1577809a11221f/.images/Full_Workflow.png?raw=true)
+![All](https://github.com/hkania/TE_Bench/blob/b2a07fb666b53b5dc1f01c5bb8eed97373543ff7/.images/Full_Workflow.png?raw=true)
 # Snakefile Options
 There are multiple instances of Snakefiles available. 
 Each use case is detailed below with limited dependency install instructions and detailed command line execution instructions.
 
 Instructions are provided for use on local computer or cluster via terminal with Conda installed. Check each option for specific requirements. Options 1, 2, and 3 are configured to use with a SLURM job manager on HPC. You can use other executors/plugins, we do not provide instructions to do so, and more information can be found [here](https://snakemake.github.io/snakemake-plugin-catalog/index.html) _(external, unmonitored link)_.
 
-* [**Option 1:**](https://github.com/hkania/TE_Anno_Benchmark/tree/main?tab=readme-ov-file#option-1-full-garlic-simulation-pipeline-with-repbase) Full GARLIC simulation pipeline, with RepBase
+* [**Option 1:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-1-full-garlic-simulation-pipeline-with-repbase) Full GARLIC simulation pipeline, with RepBase
   * This option allows you to generate fake sequences using GARLIC and the RepBase database to use as 'ground truth' in a benchmarking effort.
-* [**Option 2:**](https://github.com/hkania/TE_Anno_Benchmark/tree/main?tab=readme-ov-file#option-2-full-garlic-simulation-pipeline-with-dfam) Full GARLIC simulation pipeline, with Dfam
+* [**Option 2:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-2-full-garlic-simulation-pipeline-with-dfam) Full GARLIC simulation pipeline, with Dfam
   * This option allows you to generate fake sequences using GARLIC and the Dfam database to use as 'ground truth' in a benchmarking effort.
-* [**Option 3:**](https://github.com/hkania/TE_Anno_Benchmark/tree/main?tab=readme-ov-file#option-3-garlic-post-processing) GARLIC post-processing
+* [**Option 3:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-3-garlic-post-processing) GARLIC post-processing
   * This option allows you to generate a GFF file to use as your reference GFF, or 'ground truth', after obtaining GARLIC sequences from Option 1 or Option 2.
   * > _Note: This option is NOT compatible with other reference file types. You must have ran Snakefile Option 1 or 2 to generate your simulated reference sequence(s)._
-* [**Option 4:**](https://github.com/hkania/TE_Anno_Benchmark/tree/main?tab=readme-ov-file#option-4-summary-statistics) Summary Statistics
+* [**Option 4:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-4-summary-statistics) Summary Statistics
   * This option allows you to generate statistics for a given set of annotation GFF files, where you can choose to set either the GARLIC file as the reference or a correctly formatted CSV file from another source as the reference.
   * > _Note: If you choose a reference that was not generated with Snakefile Option 3 (ie. GARLIC), you can edit Snakefile Option4_noGARLIC to get summary statistics without a percent identity analysis. Instructions to do so are not provided in detail._
-* [**Option 5:**](https://github.com/hkania/TE_Anno_Benchmark/tree/main?tab=readme-ov-file#option-5-te-type-statistics) TE Type Statistics
+* [**Option 5:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-5-te-type-statistics) TE Type Statistics
   * This option allows you to generate statistics for TE types of your choosing, where you can choose to set either the GARLIC CSV file as the reference or a correctly formatted CSV file from another source as the reference.
 
 # Running the snakemake workflows
@@ -31,56 +31,56 @@ Instructions are provided for use on local computer or cluster via terminal with
 #### 1. Clone the repository to your local computer (simple download or git clone) or your cluster (git clone or wget)
 * If you have git installed on your local computer or cluster (recommended)
 > ```
-> git clone https://github.com/hkania/TE_Anno_Benchmark.git
+> git clone https://github.com/hkania/TE_Bench.git
 > ```
 * If you do not have git installed, you can perform a basic download on your local computer or cluster
   * Click the down arrow next to the 'Code' button at the top of this repository and downlaod the zip file.
 
 * If you do not have git installed, you can also use wget on your cluster if wget is installed
 > ```
-> wget https://github.com/hkania/TE_Anno_Benchmark/archive/refs/heads/main.zip
-> gunzip TE_Anno_Benchmark
+> wget https://github.com/hkania/TE_Bench/archive/refs/heads/main.zip
+> gunzip TE_Bench
 > ```
 
 #### 2. For testing a Snakefile option for the first time, or for running a Snakefile using your own data, remove the output files
 * The output files included with the repository are for comparison when testing that the Snakemake workflow of interest runs in your computing environment. They are otherwise unnecessary for you to keep, and they might mess up your workflow if you somehow have a seq_name that matches a test file.
 > ```
-> # make sure you are in the {worflow.basedir} directory, which will be TE_Anno_Benchmark if cloned or unzipped
+> # make sure you are in the {worflow.basedir} directory, which will be TE_Bench if cloned or unzipped
 >
 > find output/ -type f -not -name 'README*' -delete
 > ```
-> This command will save the directory structure, but will remove any file that is not a README.md. Then you can compare the outputs from your Snakemake run(s) to the [test data outputs reflected in this repo](https://github.com/hkania/TE_Anno_Benchmark/tree/main/test_outputs)!
+> This command will save the directory structure, but will remove any file that is not a README.md. Then you can compare the outputs from your Snakemake run(s) to the [test data outputs reflected in this repo](https://github.com/hkania/TE_Bench/tree/main/test_outputs)!
 
 #### 3. Generate Snakemake conda environment
 * We use Snakemake version 9.11.4 with the provided snakemake.yml file. This command assumes you have a miniconda installation.
 > ```
-> # make sure you are in the {worflow.basedir} directory, which will be TE_Anno_Benchmark if cloned or unzipped
+> # make sure you are in the {worflow.basedir} directory, which will be TE_Bench if cloned or unzipped
 >
 > conda env create -f snakemake.yaml
 > ```
-> This command will create an environment called snakemake_TE_BENCHMARK.
+> This command will create an environment called TE_Bench.
 
 #### 4. Check that you have the necessary environment yamls
 * In the `envs/` directory, you should have blast2.yaml, perl.yaml, and seqkit.yaml
 
 #### 5. If you are going to run a Snakefile, you must activate your Snakemake environment
 > ```
-> conda activate snakemake_TE_BENCHMARK
+> conda activate TE_Bench
 > ```
 
 ## Option 1: Full GARLIC simulation pipeline, with RepBase
-> Minimum Test Run Requirements: SLURM manager, RepBase EMBL formatted files (see download instructions below), and TEST genome files (see the [README.md](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option1/README.md) for the `input/option1/` directory)
+> Minimum Test Run Requirements: SLURM manager, RepBase EMBL formatted files (see download instructions below), and TEST genome files (see the [README.md](https://github.com/hkania/TE_Bench/blob/main/input/option1/README.md) for the `input/option1/` directory)
 
-> Minimum User Run Requirements: SLURM manager, RepBase EMBL formatted files (see download instructions below), downloaded and appropriately named genome files from [UCSC Genome Browser](https://genome.ucsc.edu/) _(external, unmonitored link)_ or equivalent files produced elsewhere. Note: instructions for equivalent file use are **not** provided. (see the [README.md](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option1/README.md) for the `input/option1/` directory)
+> Minimum User Run Requirements: SLURM manager, RepBase EMBL formatted files (see download instructions below), downloaded and appropriately named genome files from [UCSC Genome Browser](https://genome.ucsc.edu/) _(external, unmonitored link)_ or equivalent files produced elsewhere. Note: instructions for equivalent file use are **not** provided. (see the [README.md](https://github.com/hkania/TE_Bench/blob/main/input/option1/README.md) for the `input/option1/` directory)
 * Note that RepBase is behind a paywall. This option is only available if you have access to RepBase and the associated EMBL formatted file. This option was used for the associated manuscript.
 
-![Option12](https://github.com/hkania/TE_Anno_Benchmark/blob/3830f6f75222d2d67d4450ad2791a8ffbd72fe61/.images/Snakefile_Option_12.png?raw=true)
+![Option12](https://github.com/hkania/TE_Bench/blob/3830f6f75222d2d67d4450ad2791a8ffbd72fe61/.images/Snakefile_Option_12.png?raw=true)
 _Snakefile Option 1 will use input [UCSC Genome Browser](https://genome.ucsc.edu/) formatted genomic files and the Repbase database to generate simulated sequences of a desired length using modified versions of the createModel.pl and createFakeSequence.pl scripts from [GARLIC](https://github.com/caballero/Garlic). Then inseparate steps, Option 1 leverages a seqkit conda environment to help produce files that are necessary for subsequent Snakefile options: a log file (neessary for Snakefile Option 3), simulated DNA fasta sequences (necessary reference input for TE annotation pipelines), and TE .inserts files (necessary for Snakefile Option 3 and Option 4)._
 
 ### 1. Download and concatenate the RepBase EMBL files in the `/output/model_data/RepBase/` directory
 * Fill in the `XX` areas below with your specific RepBase edition and URL
 > ```
-> # make sure you are in the {worflow.basedir} directory, which will be TE_Anno_Benchmark if cloned or unzipped
+> # make sure you are in the {worflow.basedir} directory, which will be TE_Bench if cloned or unzipped
 >
 > cd output/model_data/RepBase
 > 
@@ -98,7 +98,7 @@ _Snakefile Option 1 will use input [UCSC Genome Browser](https://genome.ucsc.edu
 * Then, in the `snakemake/scripts` directory, edit line 211 ($repbase_file = "$dir/RepBase/RepBaseXX.XX.embl/RepBase.embl") of the `createFakeSequence_repbase.pl` script to reflect the name of your specific `snakemake/output/model_data/RepBase/RepbaseXX.XX.embl` file.
 
 ### 2. Unpack your data
-If running a test, unpack the test input files into the `input/option1` directory (see input description and download instructions [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option1/README.md))
+If running a test, unpack the test input files into the `input/option1` directory (see input description and download instructions [here](https://github.com/hkania/TE_Bench/blob/main/input/option1/README.md))
 * Once you have the `option1_inputs.tar.gz` file in the `input/option1` directory, run this command to unpack it
 > ```
 > # make sure you are in the {workflow.basedir}/input/option1 directory
@@ -106,17 +106,17 @@ If running a test, unpack the test input files into the `input/option1` director
 > tar -xvf option1_inputs.tar.gz
 > ```
 
-If running with your own data, check that your files match the instructions provided in the input description [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option1/README.md). Have them in the `input/option1` directory.
+If running with your own data, check that your files match the instructions provided in the input description [here](https://github.com/hkania/TE_Bench/blob/main/input/option1/README.md). Have them in the `input/option1` directory.
 
 ### 3. Activate your snakemake environment, if not already activated
 > ```
-> conda activate snakemake_TE_BENCHMARK
+> conda activate TE_Bench
 > ```
 
 ### 4. Running with the test data
 You do not need to mess with the config_option12.yaml file. You can simply start with a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake --profile profile/ --conda-frontend conda --conda-prefix ~/.snakemake/conda -p --verbose -s Snakefile_Option1 -n
 > ```
@@ -163,7 +163,7 @@ Then, make sure to edit the `config_option12.yaml` file to reflect:
 
 When you are ready, use the following command to run a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake --profile profile/ --conda-frontend conda --conda-prefix ~/.snakemake/conda -p --verbose -s Snakefile_Option1 -n
 > ```
@@ -197,17 +197,17 @@ To make sure it ran correctly, check the resulting log file to see that the sequ
 * If you want more control in your SLURM jobs, you can add a `slurm_extra =` line under the `resources:` option of a Snakemake rule with flags like `--mail-type=ALL`. See the [Snakemake executor plugin: slurm](https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html) page for more details _(external, unmonitored link)._
 
 ## Option 2: Full GARLIC simulation pipeline, with DFAM
-> Minimum Test Run Requirements: SLURM manager, Dfam EMBL formatted files (see download instructions below), and TEST genome files (see the [README.md](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option2/README.md) for the `input/option2/` directory)
+> Minimum Test Run Requirements: SLURM manager, Dfam EMBL formatted files (see download instructions below), and TEST genome files (see the [README.md](https://github.com/hkania/TE_Bench/blob/main/input/option2/README.md) for the `input/option2/` directory)
 
-> Minimum User Run Requirements: SLURM manager, Dfam EMBL formatted files (see download instructions below), downloaded and appropriately named genome files from [UCSC Genome Browser](https://genome.ucsc.edu/) _(external, unmonitored link)_ or equivalent files produced elsewhere. Note: instructions for equivalent file use are **not** provided. You will also need appropriately named RepeatMasker .align file(s) from a RepeatMasker run that had access to Dfam TE libraries corresponding to the EMBL formatted file (see below) (see the [README.md](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option2/README.md) for the `input/option2/` directory)
+> Minimum User Run Requirements: SLURM manager, Dfam EMBL formatted files (see download instructions below), downloaded and appropriately named genome files from [UCSC Genome Browser](https://genome.ucsc.edu/) _(external, unmonitored link)_ or equivalent files produced elsewhere. Note: instructions for equivalent file use are **not** provided. You will also need appropriately named RepeatMasker .align file(s) from a RepeatMasker run that had access to Dfam TE libraries corresponding to the EMBL formatted file (see below) (see the [README.md](https://github.com/hkania/TE_Bench/blob/main/input/option2/README.md) for the `input/option2/` directory)
 
-![Option12](https://github.com/hkania/TE_Anno_Benchmark/blob/3830f6f75222d2d67d4450ad2791a8ffbd72fe61/.images/Snakefile_Option_12.png?raw=true)
+![Option12](https://github.com/hkania/TE_Bench/blob/b2a07fb666b53b5dc1f01c5bb8eed97373543ff7/.images/Snakefile_Option_12.png?raw=true)
 _Snakefile Option 2 will use input [UCSC Genome Browser](https://genome.ucsc.edu/) formatted genomic files and the Dfam database to generate simulated sequences of a desired length using modified versions of the createModel.pl and createFakeSequence.pl scripts from [GARLIC](https://github.com/caballero/Garlic). Then inseparate steps, Option 2 leverages a seqkit conda environment to help produce files that are necessary for subsequent Snakefile options: a log file (neessary for Snakefile Option 3), simulated DNA fasta sequences (necessary reference input for TE annotation pipelines), and TE .inserts files (necessary for Snakefile Option 3 and Option 4)._
 
 ### 1. Download the Dfam EMBL file(s) of interest in the `/output/model_data/Dfam/` directory
 * Note: for purposes of this repository, we used Dfam3.9 partitions 0 and 1 only. You can adjust this, and will need to re-run your genome(s) of simulation interest through RepeatMasker compiled only with a library containing those associated Dfam elements. For example, if you wanted to use all Dfam3.9 elements on your genome(s) of interest, you could download the associated Dfam-1.embl.gz file into the `{workflow.basedir}/output/model_data/Dfam` directory and into the `Families/famdb` directory of your RepeatMasker program. Then, you would need to reconfigure your RepeatMasker following the RepeatMasker configuration [steps](https://www.repeatmasker.org/RepeatMasker/) prior to using RepeatMasker to generate the .align file required by GARLIC. We do not provide detailed explanations of how to configure RepeatMasker since computing systems vary, but [this resource](https://darencard.net/blog/2022-10-13-install-repeat-modeler-masker/) may be of help!
 > ```
-># make sure you are in the {worflow.basedir} directory, which will be TE_Anno_Benchmark if cloned or unzipped
+># make sure you are in the {worflow.basedir} directory, which will be TE_Bench if cloned or unzipped
 ># if you are running on the test data, follow these exact commands. Otherwise, edit the Dfam embl file to that of your choosing.
 > 
 > cd output/model_data/Dfam
@@ -221,7 +221,7 @@ _Snakefile Option 2 will use input [UCSC Genome Browser](https://genome.ucsc.edu
 
 
 ### 2. Unpack your data
-If running a test, unpack the test input files into the `input/option2` directory (see input description and download instructions [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option2/README.md))
+If running a test, unpack the test input files into the `input/option2` directory (see input description and download instructions [here](https://github.com/hkania/TE_Bench/blob/main/input/option2/README.md))
 * Once you have the `option2_inputs.tar.gz` file in the input/option2 directory, run this command to unpack it
 > ```
 > # make sure you are in the {workflow.basedir}/input/option2 directory
@@ -230,17 +230,17 @@ If running a test, unpack the test input files into the `input/option2` director
 > ```
 * This command should take around 1 minute or less to complete.
 
-If running with your own data, check that your files match the insturctions provided in the input description [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option2/README.md). Have them in the `input/option2` directory.
+If running with your own data, check that your files match the insturctions provided in the input description [here](https://github.com/hkania/TE_Bench/blob/main/input/option2/README.md). Have them in the `input/option2` directory.
 
 ### 3. Activate your snakemake environment, if not already activated
 > ```
-> conda activate snakemake_TE_BENCHMARK
+> conda activate TE_Bench
 > ```
 
 ### 4. Running with the test data
 You do not need to mess with the config_option12.yaml file. You can simply start with a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake --profile profile/ --conda-frontend conda --conda-prefix ~/.snakemake/conda -p --verbose -s Snakefile_Option2 -n
 > ```
@@ -287,7 +287,7 @@ Then, make sure to edit the `config_option12.yaml` file to reflect:
 
 When you are ready, use the following command to run a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake --profile profile/ --conda-frontend conda --conda-prefix ~/.snakemake/conda -p --verbose -s Snakefile_Option2 -n
 > ```
@@ -321,15 +321,15 @@ To make sure it ran correctly, check the resulting log file to see that the sequ
 * If you want more control in your SLURM jobs, you can add a `slurm_extra =` line under the `resources:` option of a Snakemake rule with flags like `--mail-type=ALL`. See the [Snakemake executor plugin: slurm](https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html) page for more details _(external, unmonitored link)._
 
 ## Option 3: GARLIC post-processing
-> Minimum Test Run Requirements: SLURM manager, TEST GARLIC log file and insert files (see input description and download instructions [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option3/README.md))
+> Minimum Test Run Requirements: SLURM manager, TEST GARLIC log file and insert files (see input description and download instructions [here](https://github.com/hkania/TE_Bench/blob/main/input/option3/README.md))
 
 > Minimum User Run Requirements: SLURM manager, user-generated GARLIC log file(s) and .inserts file(s) (see instructions below)
 
-![Option3](https://github.com/hkania/TE_Anno_Benchmark/blob/3830f6f75222d2d67d4450ad2791a8ffbd72fe61/.images/Snakefile_Option_3.png?raw=true)
+![Option3](https://github.com/hkania/TE_Bench/blob/b2a07fb666b53b5dc1f01c5bb8eed97373543ff7/.images/Snakefile_Option_3.png?raw=true)
 _Snakefile Option 3 will use input rule_garlic_sequence_generation log file(s) and simulated .inserts file(s) to generate a reference GFF file that will be used as 'ground truth' annotation files. To do so, it leverages a bash script and a NCBI Blast conda environment. A separate step will use R to format the GFF file into a .CSV file for statistical analyses in Snakefile Option 4 and Option 5._
 
 ### 1. Unpack your data
-If running a test, unpack the test input files into the `input/option3` directory (see input description and download instructions [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option3/README.md))
+If running a test, unpack the test input files into the `input/option3` directory (see input description and download instructions [here](https://github.com/hkania/TE_Bench/blob/main/input/option3/README.md))
 * Once you have the `option3_inputs.tar.gz` file in the `input/option3` directory, run this command to unpack it
 > ```
 > # make sure you are in the {workflow.basedir}/input/option3 directory
@@ -338,17 +338,17 @@ If running a test, unpack the test input files into the `input/option3` director
 > ```
 * This command should take around 1 minute or less to complete.
 
-If running with your own data, check that your files match the instructions provided in the input description [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option3/README.md). You should have already completed a run with Snakefile Option 1 or Option 2.
+If running with your own data, check that your files match the instructions provided in the input description [here](https://github.com/hkania/TE_Bench/blob/main/input/option3/README.md). You should have already completed a run with Snakefile Option 1 or Option 2.
 
 ### 2. Activate your snakemake environment, if not already activated
 > ```
-> conda activate snakemake_TE_BENCHMARK
+> conda activate TE_Bench
 > ```
 
 ### 3. Running with the test data
 You do not need to mess with the config_option3.yaml file. You can simply start with a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake --profile profile/ --conda-frontend conda --conda-prefix ~/.snakemake/conda -p --verbose -s Snakefile_Option3_test -n
 > ```
@@ -370,7 +370,7 @@ Use the following command to start your actual test run. It may take up to a day
 > ```
 > Note: we recommended to use a screen or nohup.
 
-* After running, you can compare the outputs with the [provided data](https://github.com/hkania/TE_Anno_Benchmark/tree/main/test_outputs) to check that your Snakefile Option 3 test ran correctly.
+* After running, you can compare the outputs with the [provided data](https://github.com/hkania/TE_Bench/tree/main/test_outputs) to check that your Snakefile Option 3 test ran correctly.
 
 ### 4. Running on non-test data
 You need to edit the config_option3.yaml file to reflect:
@@ -391,7 +391,7 @@ Depending on the size of your simulated sequence(s), you may need to vary the al
 
 When you are ready, use the following command to run a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake --profile profile/ --conda-frontend conda --conda-prefix ~/.snakemake/conda -p --verbose -s Snakefile_Option3 -n
 > ```
@@ -419,15 +419,15 @@ Then, use the following command to start your actual run.
 * **The location of the .fa file(s) is important for wildcard generation, so if you do not have a {your_model_name}.fa in the `input/option1` folder for RepBase or in `input/option2` folder for Dfam, you will need to move it to that folder or start an empty file named your_model_name.fa.**
 
 ## Option 4: Summary statistics
-> Minimum Test Run Requirements: TEST pipeline annotation files (see input description and download instructions [here](\https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option4/README.md))
+> Minimum Test Run Requirements: TEST pipeline annotation files (see input description and download instructions [here](\https://github.com/hkania/TE_Bench/blob/main/input/option4/README.md))
 
 > Minimum User Run Requirements: Reference CSV file (produced in Snakefile Option 3 if simulating data). Using the reference sequence of choice as the input to each pipeline: EarlGrey and EDTA GFF files, RepeatModeler2 consensi.fa.classified file, and RepeatMasker output from running RepeatModeler2 consensi.fa.classified file against the sequence (see Notes/Considerations below if comparing other pipeline(s))
 
-![Option4](https://github.com/hkania/TE_Anno_Benchmark/blob/3830f6f75222d2d67d4450ad2791a8ffbd72fe61/.images/Snakefile_Option_4.png?raw=true)
+![Option4](https://github.com/hkania/TE_Bench/blob/b2a07fb666b53b5dc1f01c5bb8eed97373543ff7/.images/Snakefile_Option_4.png?raw=true)
 _Snakefile Option 4 assumes the user has a reference CSV file formatted with 8 columns. It also assumes the user has leveraged EarlGrey, EDTA, and RepeatModeler2 to discover TEs within the reference sequence. Option 4 will use R to format annotation outputs generated from EarlGrey, EDTA, and RepeatModeler2 (see supplemental TE Discovery Steps). For each pipeline query CSV, Option 4 will compare it to the ground truth reference CSV using python to generate summary statistics, perform an analysis on nested TEs, and dive into coverage of elements by major TE subclasses. Visualizations to make sense of the analyses are also produced. In addition, if Snakefile Option 1 or 2 was used to simulate sequences using GARLIC, Option 4 uses python to perform an analysis on annotation performance across percent identity of elements to their TE consensi._
 
 ### 1. Unpack your data
-If running a test, unpack the test input files into the `input/option4` directory (see input description and download instructions [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option4/README.md))
+If running a test, unpack the test input files into the `input/option4` directory (see input description and download instructions [here](https://github.com/hkania/TE_Bench/blob/main/input/option4/README.md))
 * Once you have the `option4_inputs.tar.gz` file in the `input/option4` directory, run this command to unpack it
 > ```
 > # make sure you are in the {workflow.basedir}/input/option4 directory
@@ -437,17 +437,17 @@ If running a test, unpack the test input files into the `input/option4` director
 * This command should take around 1 minute or less to complete.
 * Then, move `araThaTEST_Garlic.csv` and `sacCerTEST_Garlic.csv` from `{workflow.basedir}/input/option4` to `{workflow.basedir}/output/cleaned_csvs/araThaTEST` and `{workflow.basedir}/output/cleaned_csvs/sacCerTEST` respectively.
 
-If running with your own data, check that your files match the instructions provided in the input description [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option4/README.md).
+If running with your own data, check that your files match the instructions provided in the input description [here](https://github.com/hkania/TE_Bench/blob/main/input/option4/README.md).
 
 ### 2. Activate your snakemake environment, if not already activated
 > ```
-> conda activate snakemake_TE_BENCHMARK
+> conda activate TE_Bench
 > ```
 
 ### 3. Running with the test data
 You do not need to mess with the config_option4.yaml file. You can simply start with a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake -p --verbose -s Snakefile_Option4 -n
 > ```
@@ -477,7 +477,7 @@ Use the following command to start your actual test run. It will take about 5 mi
 > ```
 * We recommend using the `--rerun-incomplete` flag to overcome any problems with latency wait times, shared filesystem conditions, and/or subprocess spawning. It will rerun any partially finished jobs that encountered a premature stop.
  
-* After running, you can compare the outputs with the [provided data](https://github.com/hkania/TE_Anno_Benchmark/tree/main/test_outputs) to check that your Snakefile Option 4 test ran correctly.
+* After running, you can compare the outputs with the [provided data](https://github.com/hkania/TE_Bench/tree/main/test_outputs) to check that your Snakefile Option 4 test ran correctly.
 
 ### 4a. Running on non-test data
 > Snakefile_Option_4 expects that you used Option 1/2 & 3 to generate a simulated reference. If you did not, **proceed to 4b**.
@@ -503,7 +503,7 @@ You need to edit the config_option4.yaml file to reflect these aspects of your d
 * the EarlGrey annotation GFF extension (EG_gff_ext)
 * the EDTA annotation GFF extension (EDTA_gff_ext)
 * the sequence length of the reference (seq_len)
-* the directory which houses the .inserts file generated from GARLIC (see [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option4/README.md), recommended to move .inserts file(s) to `input/option4` folder)
+* the directory which houses the .inserts file generated from GARLIC (see [here](https://github.com/hkania/TE_Bench/blob/main/input/option4/README.md), recommended to move .inserts file(s) to `input/option4` folder)
 * Any TE types outside of the defaults (extras) that you want to be included in the analysis on percent identity and percent coverage. They need to be comma separated with no whitespace
   * Default inclusions, case insensitive, are DNA, LTR, LINE-dependent, & LINE
 > Note: the text before these file extensions should match, and should be the sequence/model name. This allows the seq_name wildcard to be built correctly by Snakemake. If they do not match, but do correspond to the same sequence, please edit accordingly.
@@ -513,7 +513,7 @@ Then, double check that your reference CSV(s) is(are) housed in the `output/clea
 
 When you are ready, use the following command to run a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake -p --verbose -s Snakefile_Option4 -n
 > ```
@@ -556,7 +556,7 @@ You need to edit the config_option4.yaml file to reflect these aspects of your d
 * the EarlGrey annotation GFF extension (EG_gff_ext)
 * the EDTA annotation GFF extension (EDTA_gff_ext)
 * the sequence length of the reference (seq_len)
-* the directory which houses the .inserts file generated from GARLIC (see [here](https://github.com/hkania/TE_Anno_Benchmark/blob/main/input/option4/README.md), recommended to move .inserts file(s) to `input/option4` folder)
+* the directory which houses the .inserts file generated from GARLIC (see [here](https://github.com/hkania/TE_Bench/blob/main/input/option4/README.md), recommended to move .inserts file(s) to `input/option4` folder)
 * Any TE types outside of the defaults (extras) that you want to be included in the analysis on percent identity and percent coverage. They need to be comma separated with no whitespace
   * Default inclusions, case insensitive, are DNA, LTR, LINE-dependent, & LINE
 > Note: the text before these file extensions should match, and should be the sequence/model name. This allows the seq_name wildcard to be built correctly by Snakemake. If they do not match, but do correspond to the same sequence, please edit accordingly.
@@ -566,7 +566,7 @@ Then, double check that your reference CSV(s) is(are) housed in the `output/clea
 
 When you are ready, use the following command to run a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake -p --verbose -s Snakefile_Option4_noGarlic -n
 > ```
@@ -616,7 +616,7 @@ Here are some other use cases for Snakefile Option 4.
 
 > Minimum User Run Requirements: Reference CSV file (produced in Snakefile Option 3 if simulating data). All test query CSVs (columns should follow the format described in "SNAKEFILE OPTION 4 EXPECTED CSV FORMAT" above).
 
-![Option5](https://github.com/hkania/TE_Anno_Benchmark/blob/3830f6f75222d2d67d4450ad2791a8ffbd72fe61/.images/Snakefile_Option_5.png?raw=true)
+![Option5](https://github.com/hkania/TE_Bench/blob/b2a07fb666b53b5dc1f01c5bb8eed97373543ff7/.images/Snakefile_Option_5.png?raw=true)
 _Snakefile Option 5 assumes the user has cleaned CSV files from a reference TE annotation, with all known TE positions, and from all pipelines to be considered. Each CSV needs to be formatted with 8 columns, as specified above. Option 5 will use R to filter the CSVs on specified TE types. It can be adapted to filter on other columns. For each filtered pipeline query CSV, Option 5 will compare it to the ground truth filtered reference CSV using python to generate summary statistics and associated radar plots for the filter of choice._
 
 ### 1. Ensure you have cleaned CSVs
@@ -634,13 +634,13 @@ Option 5 assumes the user already have cleaned CSVs from the reference TE annota
 
 ### 2. Activate your snakemake environment, if not already activated
 > ```
-> conda activate snakemake_TE_BENCHMARK
+> conda activate TE_Bench
 > ```
 
 ### 3. Running with the test data from Option 4
 You do not need to mess with the config_option5.yaml file. You can simply start with a dry run as long as you already ran Snakefile Option 4 on the test data.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake -p --verbose -s Snakefile_Option5 -n
 > ```
@@ -673,7 +673,7 @@ You need to edit the config_option4.yaml file to reflect these aspects of your d
 
 When you are ready, use the following command to run a dry run.
 > ```
-> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Anno_Benchmark)
+> cd {workflow.basedir} # fill in with your base directory (if you cloned, it will likely be named TE_Bench)
 > 
 > snakemake -p --verbose -s Snakefile_Option5 -n
 > ```
