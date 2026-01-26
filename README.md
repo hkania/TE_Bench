@@ -24,7 +24,7 @@ Instructions are provided for use on local computer or cluster via terminal with
 * [**Option 4:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-4-performance-metrics) Performance metrics
   * This option allows you to generate statistics for a given set of annotation GFF files, where you can choose to set either the GARLIC file as the reference or a correctly formatted CSV file from another source as the reference.
   * > _Note: If you choose a reference that was not generated with Snakefile Option 3 (ie. GARLIC), you can edit Snakefile Option4_noGARLIC to get summary statistics without a percent identity analysis. Instructions to do so are not provided in detail._
-* [**Option 5:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-5-performance-metrics-on-filtered-data) TE Type Statistics
+* [**Option 5:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-5-performance-metrics-on-filtered-data) Performance metrics on filtered data
   * This option allows you to generate statistics for TE variables of your choosing, where you can choose to set either the GARLIC CSV file as the reference or a correctly formatted CSV file from another source as the reference.
 
 # Running the snakemake workflows
