@@ -24,8 +24,8 @@ Instructions are provided for use on local computer or cluster via terminal with
 * [**Option 4:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-4-performance-metrics) Performance metrics
   * This option allows you to generate statistics for a given set of annotation GFF files, where you can choose to set either the GARLIC file as the reference or a correctly formatted CSV file from another source as the reference.
   * > _Note: If you choose a reference that was not generated with Snakefile Option 3 (ie. GARLIC), you can edit Snakefile Option4_noGARLIC to get summary statistics without a percent identity analysis. Instructions to do so are not provided in detail._
-* [**Option 5:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-5-te-type-statistics) TE Type Statistics
-  * This option allows you to generate statistics for TE types of your choosing, where you can choose to set either the GARLIC CSV file as the reference or a correctly formatted CSV file from another source as the reference.
+* [**Option 5:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-5-performance-metrics-on-filtered-data) TE Type Statistics
+  * This option allows you to generate statistics for TE variables of your choosing, where you can choose to set either the GARLIC CSV file as the reference or a correctly formatted CSV file from another source as the reference.
 
 # Running the snakemake workflows
 ## For all Options, first complete these steps:
@@ -612,7 +612,7 @@ Here are some other use cases for Snakefile Option 4.
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
 | Sequence Name  | Program (what generated the sequence) | Start Position | End Position | TE Class/Subclass (Non-specific, ie. Line-dependent) | TE Family (ie. Alu) | TE Name (ie. AluY) | TE Superfamily (Specific, ie. SINE)
 
-## Option 5: TE Type Statistics
+## Option 5: Performance metrics on filtered data
 > Minimum Test Run Requirements: TEST pipeline CSV files obtained after running Snakefile option 4 - araThaTEST_RM2.csv, araThaTEST_EG.csv, araThaTEST_EDTA.csv, araThaTEST_Garlic.csv (downloaded before running Snakefile option 4) & the same file extensions for sacCerTEST
 
 > Minimum User Run Requirements: Reference CSV file (produced in Snakefile Option 3 if simulating data). All test query CSVs (columns should follow the format described in "SNAKEFILE OPTION 4 EXPECTED CSV FORMAT" above).
