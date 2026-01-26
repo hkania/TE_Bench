@@ -21,7 +21,7 @@ Instructions are provided for use on local computer or cluster via terminal with
 * [**Option 3:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-3-garlic-post-processing) GARLIC post-processing
   * This option allows you to generate a GFF file to use as your reference GFF, or 'ground truth', after obtaining GARLIC sequences from Option 1 or Option 2.
   * > _Note: This option is NOT compatible with other reference file types. You must have ran Snakefile Option 1 or 2 to generate your simulated reference sequence(s)._
-* [**Option 4:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-4-summary-statistics) Summary Statistics
+* [**Option 4:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-4-performance-metrics) Performance metrics
   * This option allows you to generate statistics for a given set of annotation GFF files, where you can choose to set either the GARLIC file as the reference or a correctly formatted CSV file from another source as the reference.
   * > _Note: If you choose a reference that was not generated with Snakefile Option 3 (ie. GARLIC), you can edit Snakefile Option4_noGARLIC to get summary statistics without a percent identity analysis. Instructions to do so are not provided in detail._
 * [**Option 5:**](https://github.com/hkania/TE_Bench/tree/main?tab=readme-ov-file#option-5-te-type-statistics) TE Type Statistics
@@ -419,7 +419,7 @@ Then, use the following command to start your actual run.
 
 * **The location of the .fa file(s) is important for wildcard generation, so if you do not have a {your_model_name}.fa in the `input/option1` folder for RepBase or in `input/option2` folder for Dfam, you will need to move it to that folder or start an empty file named your_model_name.fa.**
 
-## Option 4: Summary statistics
+## Option 4: Performance metrics
 > Minimum Test Run Requirements: TEST pipeline annotation files (see input description and download instructions [here](\https://github.com/hkania/TE_Bench/blob/main/input/option4/README.md))
 
 > Minimum User Run Requirements: Reference CSV file (produced in Snakefile Option 3 if simulating data). Using the reference sequence of choice as the input to each pipeline: EarlGrey and EDTA GFF files, RepeatModeler2 consensi.fa.classified file, and RepeatMasker output from running RepeatModeler2 consensi.fa.classified file against the sequence (see Notes/Considerations below if comparing other pipeline(s))
