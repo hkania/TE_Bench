@@ -1,0 +1,160 @@
+import glob
+import os
+import sys
+
+def print_custom_help():
+    help_text = f"""
+TE_Bench Snakemake Workflow, Stage 2 Simulated Annotation File Generation
+Builds simulated GFF and CSV TE annotation files holding locations and characteristics of all TEs within a Garlic Simulated FASTA sequence.
+
+Usage:
+    snakemake -s AnnotationGen_Snakefile [options] --cores N
+
+Optional configuration flags (from config_annotationgen.yaml):
+
+test            : Run test workflow using provided data from TE_Bench (default: False)
+num_seqs        : The number of sequences simulated in rule_garlic_sequence_generation from Simulation_Snakefile (default: 2 for testing purposes)
+GARLIC_LOG_FILE : The location of the log file corresponding to rule_garlic_sequence_generation from Simulation_Snakefile (default: test log file input/testdata/droMelTEST_garlic_test.log, NOTE real run logs should be in log/rule_garlic_sequence_generation/)
+
+Examples:
+    snakemake -s AnnotationGen_Snakefile --cores 1 --rerun-incomplete (ALL DEFAULTS)
+    snakemake -s AnnotationGen_Snakefile --cores 1 --rerun-incomplete --config test=true (RUN ON PROVIDED TEST DATA)
+"""
+    print(help_text)
+    sys.exit(0)
+
+for i, arg in enumerate(sys.argv):
+    if arg.startswith("--config"):
+        if i+1 < len(sys.argv):
+            config_args = sys.argv[i+1].split(",")
+            for j, c in enumerate(config_args):
+                if c.lower() in ["help", "h"]:
+                    config_args[j] = "help=true"
+            sys.argv[i+1] = ",".join(config_args)
+
+if any("help=true" in arg.lower() for arg in sys.argv):
+    print_custom_help()
+
+def get_flag(config, key, default=True):
+    """
+    Read a boolean flag from Snakemake config.
+    Returns True/False.
+    Default is True if the key is missing.
+    Accepts 'true'/'false' (case-insensitive) or actual booleans.
+    """
+    val = config.get(key, default)
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() == "true"
+
+# Load the config file
+configfile: "config_annotationgen.yaml"
+
+TEST = get_flag(config, "test", default=False)
+
+# Extract all sequence names from fasta files
+if TEST:
+    seq_names = ["droMelTEST"]
+else:
+    input_dir = f"input/modeldata"
+    fasta_files = glob.glob(os.path.join(input_dir, "*.fa"))
+    seq_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+
+localrules: garlic_to_csv
+
+rule all:
+    input:
+        [
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}_{num}/full/comprehensive/{seq_name}_{num}_Garlic.csv"),
+                seq_name=seq_names,
+                num=range(1, config["num_sequences"] + 1)
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}/gffs/{seq_name}_{num}_Garlic.gff"),
+                seq_name=seq_names,
+                num=range(1, config["num_sequences"] + 1)
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split"),
+                seq_name=seq_names
+            ) if not TEST else []
+            ),
+        ]
+
+if not TEST:
+    rule run_garlic_gff_generation:
+        input:
+            log=config["GARLIC_LOG_FILE"],
+            garlic_in_directory=expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split"),
+                seq_name=seq_names
+            )
+        output:
+            gff=expand(
+                    os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}/gffs/{seq_name}_{num}_Garlic.gff"),
+                    seq_name=seq_names,
+                    num=range(1, config["num_sequences"] + 1)
+                )
+        params:
+            model=seq_names,
+            end=config["num_sequences"] - 1,
+            awk_script_1=os.path.join(workflow.basedir, "scripts/sequence_start_stop"),
+            awk_script_2=os.path.join(workflow.basedir, "scripts/nested_gff"),
+            garlic_out_directory=expand(
+                os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}"),
+                seq_name=seq_names
+            ),
+            garlic_in_directory=expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split"),
+                seq_name=seq_names
+            )
+        conda:
+            "envs/blast2.yaml"
+        resources:
+            mem_mb = 50000,
+            runtime=7200
+        threads: 4
+        shell:
+            """
+            ./scripts/garlic_gff_gen.sh {params.end} {params.model} {input.log} {params.garlic_out_directory} {params.garlic_in_directory} {params.awk_script_1} {params.awk_script_2}
+            """
+
+if TEST:
+    rule run_garlic_gff_generation:
+        input:
+            log=os.path.join(workflow.basedir, "input/annotationdata/testing/droMelTEST_garlic_test.log")
+        output:
+            gffs=expand(
+                os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}/gffs/{seq_name}_{num}_Garlic.gff"),
+                seq_name=seq_names,
+                num=range(1, config["num_sequences"] + 1)
+            )
+        params:
+            end=config["num_sequences"] - 1,
+            seq_name=seq_names,
+            awk_script_1=os.path.join(workflow.basedir, "scripts/sequence_start_stop"),
+            awk_script_2=os.path.join(workflow.basedir, "scripts/nested_gff"),
+            garlic_out_directory=expand(
+                os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}"),
+                seq_name=seq_names
+            ),
+            garlic_in_directory=os.path.join(workflow.basedir, "input/annotationdata/testing")
+        conda:
+            "envs/blast2.yaml"
+        resources:
+            mem_mb = 10000,
+            runtime=1440
+        threads: 4
+        shell:
+            """
+            ./scripts/garlic_gff_gen.sh {params.end} {params.seq_name} {input.log} {params.garlic_out_directory} {params.garlic_in_directory} {params.awk_script_1} {params.awk_script_2}
+            """
+
+rule garlic_to_csv:
+    input:
+        gff=os.path.join(workflow.basedir, "output/garlic_gff_generation/{seq_name}/gffs/{seq_name}_{num}_Garlic.gff")
+    output:
+        csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}_{num}/full/comprehensive/{seq_name}_{num}_Garlic.csv")
+    script:
+        "scripts/Garlic_gff_to_csv.R"

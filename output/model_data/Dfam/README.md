@@ -1,1 +1,1 @@
-This directory is empty, and requires users planning to run Snakefile Option 2 to download the Dfam.embl file(s) of their choosing here.
+This directory is empty, and requires users planning to run Simulation_Snakefile to download the Dfam.embl file(s) of their choosing here, a step now automated with Simulation_Snakefile and Dfam-curated_only-1.embl.gz.

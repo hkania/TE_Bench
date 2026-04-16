@@ -1,0 +1,17 @@
+Full Traceback (most recent call last):
+  File "/hpc/group/yoderlab/hpk4/miniconda3/envs/TE_Bench/lib/python3.11/site-packages/snakemake/cli.py", line 2039, in args_to_api
+    workflow_api = snakemake_api.workflow(
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/hpc/group/yoderlab/hpk4/miniconda3/envs/TE_Bench/lib/python3.11/site-packages/snakemake/api.py", line 156, in workflow
+    self._workflow_api = WorkflowApi(
+                         ^^^^^^^^^^^^
+  File "<string>", line 12, in __init__
+  File "/hpc/group/yoderlab/hpk4/miniconda3/envs/TE_Bench/lib/python3.11/site-packages/snakemake/api.py", line 423, in __post_init__
+    super().__post_init__()
+  File "/hpc/group/yoderlab/hpk4/miniconda3/envs/TE_Bench/lib/python3.11/site-packages/snakemake/api.py", line 71, in __post_init__
+    self._check()
+  File "/hpc/group/yoderlab/hpk4/miniconda3/envs/TE_Bench/lib/python3.11/site-packages/snakemake/api.py", line 430, in _check
+    raise ApiError(f'Snakefile "{self.snakefile}" not found.')
+snakemake_interface_common.exceptions.ApiError: Snakefile "Snakefile_Combine_dev4" not found.
+
+Error: Snakefile "Snakefile_Combine_dev4" not found.

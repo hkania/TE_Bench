@@ -1,0 +1,103 @@
+import os
+import sys
+
+def print_custom_help():
+    help_text = f"""
+TE_Bench Snakemake Workflow, Database Installation (Required Prior to Running  Stage 1 Sequence Simulation)
+Configures TE database data for Garlic sequence simulations.
+
+Usage:
+    snakemake -s Install_Snakefile [options] --cores N
+
+Optional configuration flags (from config_install.yaml):
+
+repbase         : Configure scripts to run with RepBase (default: False)
+repbase_version : User-provided RepBase version (default: None, NOTE TO ADD REPBASE FOLLOW GUIDE ON ASSOCIATED GITHUB https://github.com/hkania/TE_Bench)
+dfam            : Configure scripts to run with Dfam (default: True)
+dfam_version    : Dfam database version to download (default: https://www.dfam.org/releases/current/families/Dfam-curated_only-1.embl.gz)
+
+Examples:
+    snakemake -s Install_Snakefile --cores 1 (ALL DEFAULTS)
+    snakemake -s Install_Snakefile --cores 1 --config repbase=true repbase_version=RepBaseXX.XX (configure using RepBase version XX.XX)
+"""
+    print(help_text)
+    sys.exit(0)
+
+for i, arg in enumerate(sys.argv):
+    if arg.startswith("--config"):
+        if i+1 < len(sys.argv):
+            config_args = sys.argv[i+1].split(",")
+            for j, c in enumerate(config_args):
+                if c.lower() in ["help", "h"]:
+                    config_args[j] = "help=true"
+            sys.argv[i+1] = ",".join(config_args)
+
+if any("help=true" in arg.lower() for arg in sys.argv):
+    print_custom_help()
+
+def get_flag(config, key, default=True):
+    """
+    Read a boolean flag from Snakemake config.
+    Returns True/False.
+    Default is True if the key is missing.
+    Accepts 'true'/'false' (case-insensitive) or actual booleans.
+    """
+    val = config.get(key, default)
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() == "true"
+
+# Load the config file
+configfile: "config_install.yaml"
+
+REPBASE = get_flag(config, "repbase", default=False)
+DFAM = get_flag(config, "dfam")
+
+rule all:
+    input:
+        [
+            os.path.join(workflow.basedir, "output/install_build/dfam_download.txt"),
+            os.path.join(workflow.basedir, "output/install_build/dfam_unzip.txt"),
+            os.path.join(workflow.basedir, "output/install_build/dfam_script_patch.txt")
+        ]
+        + (
+            [os.path.join(workflow.basedir, "output/install_build/repbase_script_patch.txt")]
+            if REPBASE else []
+        )
+
+if DFAM:
+    rule download_dfam:
+        output:
+            dfam_download_check=os.path.join(workflow.basedir, "output/install_build/dfam_download.txt"),
+            dfam_unzip_check=os.path.join(workflow.basedir, "output/install_build/dfam_unzip.txt")
+        params:
+            dfamv=config["dfam_version"],
+            dir=os.path.join(workflow.basedir, "output/model_data/Dfam")
+        shell:
+            """
+            bash ./scripts/dfam_download.sh {params.dfamv} {output.dfam_download_check} {output.dfam_unzip_check} {params.dir}
+            """
+
+if DFAM:
+    rule dfam_script_patch:
+        output:
+            txt=os.path.join(workflow.basedir, "output/install_build/dfam_script_patch.txt")
+        params:
+            dfam_script=os.path.join(workflow.basedir, "scripts/createFakeSequence_dfam"),
+            dfamv=config["dfam_version"]
+        shell:
+            """
+            python3 ./scripts/dfam_script_patch.py {params.dfam_script} {params.dfamv} {output.txt}
+            """
+
+if REPBASE:
+    rule repbase_script_patch:
+        output:
+            txt=os.path.join(workflow.basedir, "output/install_build/repbase_script_patch.txt")
+        params:
+            repbase_script=os.path.join(workflow.basedir, "scripts/createFakeSequence_repbase"),
+            repbv=config["repbase_version"]
+        shell:
+            """
+            python3 ./scripts/repbase_script_patch.py {params.repbase_script} {params.repbv} {output.txt}
+            """

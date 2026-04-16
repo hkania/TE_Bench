@@ -208,7 +208,7 @@ $repeat_file = "$dir/$model/$model.repeats.W$win.data"
     if ( !defined $repeat_file );
 $insert_file = "$dir/$model/$model.inserts.W$win.data"
     if ( !defined $insert_file );
-$repbase_file = "$dir/RepBase/RepBase30.09.embl/RepBase.embl"
+$repbase_file = "$dir/RepBase/RepBaseXX.XX.embl/RepBase.embl"
     if ( !defined $repbase_file );
 
 print

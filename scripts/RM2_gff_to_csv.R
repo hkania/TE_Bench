@@ -67,7 +67,7 @@ clean_rmgff <- function(rmgff, rmfasta, rmcsv, name) {
   )
 
   # merge fastadf and rmdf on family number
-  fastadf$type <- sub("\\s*\\(.*", "", fastadf$type)
+  fastadf$type <- sub("\\s*[\\(\\[].*", "", fastadf$type)
   rmdf <- merge(rmdf, fastadf, by.x = "V9", by.y = "number", all.x = TRUE)
 
   # move type to V5

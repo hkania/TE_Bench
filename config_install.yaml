@@ -1,0 +1,8 @@
+repbase: false
+
+repbase_version: None
+
+dfam: true
+
+dfam_version: https://www.dfam.org/releases/current/families/Dfam-curated_only-1.embl.gz
+

@@ -1,0 +1,9 @@
+size: 1000
+
+num_seqs: 2
+
+repbase: false
+
+dfam: true
+
+test: false

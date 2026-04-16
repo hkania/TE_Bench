@@ -11,7 +11,7 @@ import os
 import sys
 
 seq_name = sys.argv[1]
-input_file = f"output/fake_fastas/{seq_name}/{seq_name}_fake.inserts"
+input_file = f"output/sim_fastas/{seq_name}/{seq_name}_sim.inserts"
 
 pattern = re.compile(r"### ARTIFICIAL SEQUENCE (\d+) ###")
 current_seq = None
@@ -20,7 +20,7 @@ current_lines = []
 def save_seq(seq_num, lines):
     if seq_num is None:
         return
-    outfile = f"output/fake_fastas/{seq_name}/{seq_name}_split/{seq_name}_{seq_num}.inserts"
+    outfile = f"output/sim_fastas/{seq_name}/{seq_name}_split/{seq_name}_{seq_num}.inserts"
     with open(outfile, "w") as f:
         f.writelines(lines)
 

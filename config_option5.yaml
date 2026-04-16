@@ -1,8 +1,0 @@
-target_types:
-    - "LTR"
-
-column: "V5"
-
-ref_csv_ext: "_Garlic"
-
-seq_len: 100000000

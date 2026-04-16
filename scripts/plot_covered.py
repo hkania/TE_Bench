@@ -66,9 +66,19 @@ def main():
     if len(sys.argv) > 7:
         extras = sys.argv[7].split(",")
 
+    plot_enabled = True
+    if "NO_PDF" in sys.argv:
+        plot_enabled = False
+
+    if not plot_enabled:
+        print("Skipping plotting; no PDF will be created for coverage pie charts")
+
     os.makedirs(os.path.dirname(save_csv), exist_ok=True)
-    os.makedirs(os.path.dirname(save_pdf), exist_ok=True)
-    
+    if plot_enabled:
+        pdf_dir = os.path.dirname(save_pdf)
+        if pdf_dir:
+            os.makedirs(pdf_dir, exist_ok=True)
+
     type_colors = {
         "dna": "#CB3A2B",
         "ltr": "#E9C716",
@@ -152,6 +162,8 @@ def main():
             else:
                 zero_counts[te_type] += 1
 
+    print(f"Generated: {save_csv}")
+
     all_types_found = list(total_counts.keys())
     labels = [t for t in all_types_allowed if t in all_types_found]
     labels += [t for t in all_types_found if t not in labels]
@@ -176,92 +188,87 @@ def main():
 
     center_label = get_center_label(test_csv)
 
-
-
-
-
-
 # Plot
-    fig, ax = plt.subplots(figsize=(8, 8))
+    if plot_enabled:
+        fig, ax = plt.subplots(figsize=(8, 8))
 
-    wedges_inner, _ = ax.pie(
-        inner_sizes,
-        labels=None,
-        startangle=180,
-        counterclock=False,
-        radius=0.7,
-        wedgeprops=dict(width=0.3, edgecolor="black", linewidth=1.5),
-        colors=[type_colors.get(t, default_color) for t in labels]
-    )
-
-    wedges_outer, _ = ax.pie(
-        outer_sizes,
-        startangle = 180,
-        counterclock=False,
-        radius=1.0,
-        wedgeprops=dict(width=0.3, edgecolor="black", linewidth=1.5),
-        colors=outer_colors
-    )
-
-    outer_index = 0
-    for t in labels:
-        covered = covered_counts[t]
-        total = total_counts[t]
-        percent = (covered / total) * 100 if total > 0 else 0.0
-
-        wedge = wedges_outer[outer_index]
-        angle = 0.5 * (wedge.theta1 + wedge.theta2)
-        x = 0.85 * np.cos(np.deg2rad(angle))
-        y = 0.85 * np.sin(np.deg2rad(angle))
-
-        ax.text(
-            x, y, f"{percent:.1f}%",
-            ha="center", va="center", multialignment='center',
-            fontsize=12, fontweight="bold"
+        wedges_inner, _ = ax.pie(
+            inner_sizes,
+            labels=None,
+            startangle=180,
+            counterclock=False,
+            radius=0.7,
+            wedgeprops=dict(width=0.3, edgecolor="black", linewidth=1.5),
+            colors=[type_colors.get(t, default_color) for t in labels]
         )
 
-        outer_index += 2   # skip the zero/uncovered slice
+        wedges_outer, _ = ax.pie(
+            outer_sizes,
+            startangle = 180,
+            counterclock=False,
+            radius=1.0,
+            wedgeprops=dict(width=0.3, edgecolor="black", linewidth=1.5),
+            colors=outer_colors
+        )
 
-    for wedge, t in zip(wedges_inner, labels):
-        if t == "line-dependent":
-            label = "LINE-\nDEP."
-        else:
-            label = t.upper()
+        outer_index = 0
+        for t in labels:
+            covered = covered_counts[t]
+            total = total_counts[t]
+            percent = (covered / total) * 100 if total > 0 else 0.0
 
-        mid_angle = 0.5 * (wedge.theta1 + wedge.theta2)
-        mid_rad = np.deg2rad(mid_angle)
+            wedge = wedges_outer[outer_index]
+            angle = 0.5 * (wedge.theta1 + wedge.theta2)
+            x = 0.85 * np.cos(np.deg2rad(angle))
+            y = 0.85 * np.sin(np.deg2rad(angle))
 
-        label_r = 0.55
-        x = label_r * np.cos(mid_rad)
-        y = label_r * np.sin(mid_rad)
+            ax.text(
+                x, y, f"{percent:.1f}%",
+                ha="center", va="center", multialignment='center',
+                fontsize=12, fontweight="bold"
+            )
 
-        rot = mid_angle
-        rot = ((rot + 180) % 360) - 180
-        if rot < -90:
-            rot += 180
-        elif rot > 90:
-            rot -= 180
+            outer_index += 2   # skip the zero/uncovered slice
+
+        for wedge, t in zip(wedges_inner, labels):
+            if t == "line-dependent":
+                label = "LINE-\nDEP."
+            else:
+                label = t.upper()
+
+            mid_angle = 0.5 * (wedge.theta1 + wedge.theta2)
+            mid_rad = np.deg2rad(mid_angle)
+
+            label_r = 0.55
+            x = label_r * np.cos(mid_rad)
+            y = label_r * np.sin(mid_rad)
+
+            rot = mid_angle
+            rot = ((rot + 180) % 360) - 180
+            if rot < -90:
+                rot += 180
+            elif rot > 90:
+                rot -= 180
+
+            ax.text(
+                x, y, label,
+                ha="center", va="center",
+                fontsize=12, fontweight="bold",
+                rotation_mode='anchor'
+            )
 
         ax.text(
-            x, y, label,
+            0, 0, center_label,
             ha="center", va="center",
-            fontsize=12, fontweight="bold",
-            rotation_mode='anchor'
+            fontsize=14, fontweight="bold"
         )
 
-    ax.text(
-        0, 0, center_label,
-        ha="center", va="center",
-        fontsize=14, fontweight="bold"
-    )
+        ax.set(aspect="equal")
+        ax.set_title("Percent of " + model + " TEs covered", fontsize=18, fontweight='bold')
+        plt.savefig(save_pdf, dpi=300, bbox_inches="tight")
+        plt.close()
 
-    ax.set(aspect="equal")
-    ax.set_title("Percent of " + model + " TEs covered", fontsize=18, fontweight='bold')
-    plt.savefig(save_pdf, dpi=300, bbox_inches="tight")
-    plt.close()
-
-    print(f"Generated: {save_csv}")
-    print(f"Generated: {save_pdf}")
+        print(f"Generated: {save_pdf}")
 
 
 if __name__ == "__main__":

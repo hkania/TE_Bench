@@ -1,0 +1,691 @@
+import sys
+
+def print_custom_help():
+    help_text = f"""
+TE_Bench Snakemake Workflow, Stages 3 & 4 Comprehensive and Selective Benchmarking
+Generates statistics and plots for TE annotations depending on the provided configuration flags.
+
+Usage:
+    snakemake -s Benchmark_Snakefile [options] --cores N
+
+Optional configuration flags (from config_benchmark.yaml):
+
+stg3          : Run stage 3 analysis (default: True)
+stg4          : Run stage 4 TE type analysis (default: True)
+clean_eg      : Run earlGrey-like CSV generation (default: True)
+clean_rm      : Run RepeatModeler2-like CSV generation (default: True)
+clean_edta    : Run EDTA-like CSV generation (default: True)
+radar         : Generate annotation statistics radar plots (default: True)
+nest          : Perform nested TE analysis (default: True; will run comprehensive if stg3 is true and selective is stg4 is true or both if both stg3 and stg4 are true)
+pie           : Generate comprehensive annotation TE class pie charts (default: True)
+iden          : Perform percent identity analysis if Garlic simulation was used (default: True)
+test          : Run test workflow using provided data from TE_Bench (default: False)
+ref_ext       : Reference CSV suffix (default: _Garlic)
+RM2_gff_ext   : RepeatModeler2 GFF suffix (default: _RM2.gff, does not apply if clean_rm flag is made false)
+RM2_fasta_ext : RepeatModeler2 FASTA suffix (default: _RM2.fa, does not apply if clean_rm flag is made false)
+EG_gff_ext    : earlGrey GFF suffix (default: EG.gff, does not apply if clean_eg flag is made false)
+EDTA_gff_ext  : EDTA GFF suffix (default: EDTA.gff, does not apply if clean_edta flag is made false)
+seq_len       : Length of reference file(s) sequence (default: 100000000)
+inserts_dir   : Directory containing the inserts file (default: input/annotationdata/testing for test. For non-test data generated with earlier workflow stages, please specify the output/sim_fastas/seq_name/seq_name_split directory and replace seq_name with your overal model sequence name to capture all iterations of a simulation. Does not apply if iden flag is made false due to non-Garlic reference file(s))
+extras        : Additional category within 'column' (see below) to include in pie charts and identity regressions (default: Unknown elements)
+column        : Column to filter CSV files on (default: V5 which holds major TE class)
+
+Examples:
+    snakemake -s Benchmark_Snakefile --cores 1 --rerun-incomplete (ALL DEFAULTS)
+    snakemake -s Benchmark_Snakefile --cores 1 --rerun-incomplete --config test=true (RUN ON PROVIDED TEST DATA)
+    snakemake -s Benchmark_Snakefile --cores 1 --rerun-incomplete --config clean_eg=false nest=false (CHANGE SOME DEFAULTS)
+"""
+    print(help_text)
+    sys.exit(0)
+
+for i, arg in enumerate(sys.argv):
+    if arg.startswith("--config"):
+        if i+1 < len(sys.argv):
+            config_args = sys.argv[i+1].split(",")
+            for j, c in enumerate(config_args):
+                if c.lower() in ["help", "h"]:
+                    config_args[j] = "help=true"
+            sys.argv[i+1] = ",".join(config_args)
+
+if any("help=true" in arg.lower() for arg in sys.argv):
+    print_custom_help()
+
+# Load the config file
+configfile: "config_benchmark.yaml"
+
+def get_flag(config, key, default=True):
+    """
+    Read a boolean flag from Snakemake config.
+    Returns True/False.
+    Default is True if the key is missing.
+    Accepts 'true'/'false' (case-insensitive) or actual booleans.
+    """
+    val = config.get(key, default)
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() == "true"
+
+CLEAN_EG = get_flag(config, "clean_eg")
+CLEAN_RM = get_flag(config, "clean_rm")
+CLEAN_EDTA = get_flag(config, "clean_edta")
+RADAR = get_flag(config, "radar")
+STAGE3 = get_flag(config, "stg3")
+STAGE4 = get_flag(config, "stg4")
+NEST = get_flag(config, "nest")
+PIE = get_flag(config, "pie")
+IDEN = get_flag(config, "iden")
+TEST = get_flag(config, "test", default=False)
+
+# Assumes the user has already run Stage2 to generate the Garlic csv file, or provides another reference CSV file formatted with
+# the same columns as Garlic. This reference CSV file MUST be in the outputs/cleaned_csvs/{seq_name}/full/comprehensive/ directory and you need to
+# specify the extension (ie. _Garlic.csv) unless you are comfortable editing the workflow below to point to your reference CSV of choice.
+
+# Refer to the README.md file on the associated GitHub repository for additional instructions.
+
+import glob
+import os
+
+if TEST:
+    gff_files = glob.glob("input/annotationdata/testing/*.gff")
+else:
+    gff_files = glob.glob("input/annotationdata/*.gff")
+
+seq_names = sorted(set(["_".join(os.path.splitext(os.path.basename(f))[0].split("_")[:-1]) for f in gff_files]))
+program_names = sorted(set([os.path.splitext(os.path.basename(f))[0].split("_")[-1] for f in gff_files]))
+program_names = [p.replace(".csv","") for p in program_names]
+REF_NAME = config["ref_ext"].lstrip("_")
+program_names_plus_ref = sorted(set([p.replace(".csv","") for p in program_names + [REF_NAME]]))
+target_types = config["target_types"]
+if isinstance(target_types, str):
+    target_types = target_types.split(",")
+
+ref_csv_ext = config["ref_ext"] + ".csv"
+
+# Rule to ensure all CSV outputs, visualizations, and the statistics file are generated
+
+rule all:
+    input:
+        [
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/{seq_name}_stats.txt"),
+                seq_name=seq_names
+            ) if STAGE3 else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_plot_stats.pdf"),
+                seq_name=seq_names
+            ) if (RADAR and STAGE3) else []
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv"),
+                seq_name=seq_names,
+                prog=program_names_plus_ref
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nest.csv"),
+                seq_name=seq_names
+            ) if (NEST and STAGE3) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_host.csv"),
+                seq_name=seq_names
+            ) if (NEST and STAGE3) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nonest.csv"),
+                seq_name=seq_names
+            ) if (NEST and STAGE3) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_{prog}_coverage_piechart.pdf"),
+                seq_name=seq_names,
+                prog=program_names
+            ) if PIE else[]
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/comprehensive/{seq_name}_{prog}_cov.csv"),
+                seq_name=seq_names,
+                prog=program_names
+            ) if ((PIE or NEST) and STAGE3) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/comprehensive/{seq_name}_ref_perc_iden.csv"),
+                seq_name=seq_names
+            ) if (IDEN and STAGE3) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_{prog}_perc_id.pdf"),
+                seq_name=seq_names,
+                prog=program_names
+            ) if (IDEN and STAGE3) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_nesting.pdf"),
+                seq_name=seq_names
+            ) if (NEST and STAGE3) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_{prog}_{type}.csv"),
+                type=target_types,
+                seq_name=seq_names,
+                prog=program_names_plus_ref
+            ) if STAGE4 else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/{seq_name}_{type}_stats.txt"),
+                type=target_types,
+                seq_name=seq_names
+            ) if STAGE4 else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/plots/{seq_name}_{type}_plot_stats.pdf"),
+                type=target_types,
+                seq_name=seq_names
+            ) if (RADAR and STAGE4) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/plots/{seq_name}_{type}_nesting.pdf"),
+                seq_name=seq_names,
+                type=target_types
+            ) if (NEST and STAGE4) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nest.csv"),
+                seq_name=seq_names,
+                type=target_types
+            ) if (NEST and STAGE4) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_host.csv"),
+                seq_name=seq_names,
+                type=target_types
+            ) if (NEST and STAGE4) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nonest.csv"),
+                seq_name=seq_names,
+                type=target_types
+            ) if (NEST and STAGE4) else []
+            ),
+            (expand(
+                os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/{type}/{seq_name}_{prog}_{type}_cov.csv"),
+                seq_name=seq_names,
+                prog=program_names,
+                type=target_types
+            ) if (NEST and STAGE4) else []
+            ),
+        ]
+
+# Generate CSV from RepeatModeler2 Output; requires .gff file from RepeatModeler2 and consensi.fa.classified file from associated RepeatMasker run
+if TEST:
+    rule move_ref_csv_test:
+        input:
+            ref_csv=os.path.join(workflow.basedir, "input/annotationdata/testing/{seq_name}" + config["ref_ext"] + ".csv")
+        output:
+            ref_csv_mv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}" + ref_csv_ext)
+        shell:
+            "mv {input.ref_csv} {output.ref_csv_mv}"
+
+if TEST:
+    rule rm_to_csv:
+        input:
+            gff=os.path.join(workflow.basedir, "input/testdata/{seq_name}" + config["RM2_gff_ext"]),
+            fasta=os.path.join(workflow.basedir, "input/testdata/{seq_name}" + config["RM2_fasta_ext"])
+        output:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_RM2.csv")
+        script:
+            "scripts/RM2_gff_to_csv.R"
+
+if CLEAN_RM and not TEST:
+    rule rm_to_csv:
+        input:
+            gff=os.path.join(workflow.basedir, "input/annotationdata/{seq_name}" + config["RM2_gff_ext"]),
+            fasta=os.path.join(workflow.basedir, "input/annotationdata/{seq_name}" + config["RM2_fasta_ext"])
+        output:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_RM2.csv")
+        script:
+            "scripts/RM2_gff_to_csv.R"
+
+# Generate CSV from Earl Grey Output
+if TEST:
+    rule eg_to_csv:
+        input:
+            gff=os.path.join(workflow.basedir, "input/testdata/{seq_name}" + config["EG_gff_ext"])
+        output:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_EG.csv")
+        script:
+            "scripts/EG_gff_to_csv.R"
+
+if CLEAN_EG and not TEST:
+    rule eg_to_csv:
+        input:
+            gff=os.path.join(workflow.basedir, "input/annotationdata/{seq_name}" + config["EG_gff_ext"])
+        output:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_EG.csv")
+        script:
+            "scripts/EG_gff_to_csv.R"
+            
+# Generate CSV from EDTA
+if TEST:
+    rule edta_to_csv:
+        input:
+            gff=os.path.join(workflow.basedir, "input/testdata/{seq_name}" + config["EDTA_gff_ext"])
+        output:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_EDTA.csv")
+        script:
+            "scripts/EDTA_gff_to_csv.R"
+
+if CLEAN_EDTA and not TEST:
+    rule edta_to_csv:
+        input:
+            gff=os.path.join(workflow.basedir, "input/annotationdata/{seq_name}" + config["EDTA_gff_ext"])
+        output:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_EDTA.csv")
+        script:
+            "scripts/EDTA_gff_to_csv.R"
+
+#Generate CSVs for nested elements, including full length elements (hosts) and nested elements (nests)
+if NEST and STAGE3:
+    rule comprehensive_nest_csvs:
+        input:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}" + ref_csv_ext)
+        output:
+            csv1=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nest.csv"),
+            csv2=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_host.csv"),
+            csv3=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nonest.csv")
+        params:
+            seq_len=config["seq_len"]
+        shell:
+            """
+            python3 ./scripts/calculate_overlap_csvs.py {input.csv} {params.seq_len} {output.csv1} {output.csv2} {output.csv3}
+            """
+
+# Define input csvs for the statistics calculation
+if STAGE3:
+    def comprehensive_stats_input_csvs(wildcards):
+        return expand(
+            os.path.join(
+                workflow.basedir,
+                "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv"
+            ),
+	    seq_name=wildcards.seq_name,
+            prog=program_names
+        )
+
+# Generate statistics across the whole genome and all inserted elements
+if STAGE3:
+    rule comprehensive_calculate_statistics:
+        input:
+            tests=comprehensive_stats_input_csvs,
+            ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}" + ref_csv_ext)
+        output:
+            stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/{seq_name}_stats.txt")
+        params:
+            seq_len=config["seq_len"]
+        run:
+            import subprocess, glob, os, re
+            seq_name = wildcards.seq_name
+            ref_ext2 = ref_csv_ext
+            csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/full/comprehensive/*.csv")
+            if not csvs:
+                raise ValueError(f"No CSV files found for sequence {seq_name}")
+            ref_csvs = [f for f in csvs if ref_ext2 in os.path.basename(f)]
+            if not ref_csvs:
+                raise ValueError(f"No reference CSV found for {seq_name} with extension {ref_ext2}")
+            for ref_csv in ref_csvs:
+                base = os.path.basename(ref_csv)
+                match = re.search(rf"{re.escape(ref_ext2)}(?:_(.+))?\.csv$", base)
+                ref_type = match.group(1) if match else None
+                non_ref_csv = [f for f in csvs if f != ref_csv]
+
+            os.makedirs(os.path.dirname(output.stats), exist_ok=True)
+
+            cmd = [
+                "python3",
+                "./scripts/generate_stats.py",
+                ref_csv,
+                str(params.seq_len),
+                output.stats,
+            ] + non_ref_csv
+            subprocess.run(cmd, check=True)
+
+# Generate hexagon plot across the whole genome and all inserted elements
+if RADAR and STAGE3:
+    rule comprehensive_statistics_radar_plot:
+        input:
+            stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/{seq_name}_stats.txt")
+        output:
+            plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_plot_stats.pdf")
+        params:
+            coverage="Whole Genome"
+        shell:
+            """
+            python3 ./scripts/view_stats.py {input.stats} {output.plot} {wildcards.seq_name} {params.coverage:q}
+            """
+
+# Define the CSVs necessary for the nested analysis
+if NEST and STAGE3:
+    def comprehensive_nesting_test_csvs(wildcards):
+        return expand(
+            os.path.join(
+                workflow.basedir,
+                "output/cleaned_csvs/{seq_name}/coverage_csvs/comprehensive/{seq_name}_{prog}_cov.csv"
+            ),
+            seq_name=wildcards.seq_name,
+            prog=program_names
+        )
+
+# Generate nesting TE plots
+if NEST and STAGE3:
+    rule comprehensive_nesting_plot:
+        input:
+            host=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_host.csv"),
+            nest=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nest.csv"),
+            no_nest=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nonest.csv"),
+            tests=comprehensive_nesting_test_csvs,
+            ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}" + ref_csv_ext)
+        output:
+            plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_nesting.pdf")
+        params:
+            seq_len=config["seq_len"],
+            scale="All"
+        run:
+            import glob, os, subprocess
+            seq_name = wildcards.seq_name
+
+            ref_ext2 = ref_csv_ext
+
+            csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/full/comprehensive/*.csv")
+            if not csvs:
+                raise ValueError(f"No CSV files found for sequence {seq_name}")
+            ref_csvs = [f for f in csvs if ref_ext2 in os.path.basename(f)]
+            if not ref_csvs:
+                raise ValueError(f"No reference CSV found for {seq_name} with extension {ref_ext2}")
+            for ref_csv in ref_csvs:
+                base = os.path.basename(ref_csv)
+                match = re.search(rf"{re.escape(ref_ext2)}(?:_(.+))?\.csv$", base)
+                ref_type = match.group(1) if match else None
+                non_ref_csv = [f for f in csvs if f != ref_csv]
+
+            cmd = [
+                "python3",
+                "./scripts/plot_nesting.py",
+                params.scale,
+                input.no_nest,
+                input.host,
+                input.nest,
+                str(params.seq_len),
+                output.plot,
+                seq_name,
+            ] + non_ref_csv
+            subprocess.run(cmd, check=True)
+
+
+# Build nested pie chart depicting total number of elements in reference file by TE type and percent of elements covered by each test pipeline
+if (PIE or NEST) and STAGE3:
+    rule comprehensive_coverage_analysis:
+        input:
+            test=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv"),
+            ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}" + ref_csv_ext)
+        output:
+            cov_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/comprehensive/{seq_name}_{prog}_cov.csv"),
+            pdf=os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_{prog}_coverage_piechart.pdf") if PIE else None
+        params:
+            seq_len=config["seq_len"],
+            extras=config["extras"],
+            pie=PIE
+        run:
+            import subprocess, glob, os, re
+
+            seq_name = wildcards.seq_name
+            prog = wildcards.prog
+            ref_ext2 = ref_csv_ext
+
+            csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/full/comprehensive/*.csv")
+
+            # Reference CSV
+            ref_csvs = [f for f in csvs if ref_ext2 in os.path.basename(f)]
+            if len(ref_csvs) != 1:
+                raise ValueError(f"Expected exactly 1 reference CSV, found: {ref_csvs}")
+            ref_csv = ref_csvs[0]
+
+            # Test CSV matching the current prog
+            test_csvs = [f for f in csvs if prog in os.path.basename(f)]
+            if len(test_csvs) != 1:
+                raise ValueError(f"Expected exactly 1 test CSV for prog {prog}, found: {test_csvs}")
+            test_csv = test_csvs[0]
+
+            cmd = [
+                "python3",
+                "./scripts/plot_covered.py",
+                seq_name,
+                output.pdf if PIE else "NO_PDF",
+                output.cov_csv,
+                str(params.seq_len),
+                ref_csv,
+                test_csv,
+                "params.extras"
+            ]
+            subprocess.run(cmd, check=True)
+
+# Calculate the percent identity of each inserted TE with its TE consensus (from RepBase or Dfam -- generated from RepeatMasker)
+if IDEN and STAGE3:
+    rule comprehensive_garlic_perc_identity:
+        input:
+            inserts=os.path.join(config["inserts_dir"] + "/{seq_name}.inserts"),
+            ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}" + ref_csv_ext)
+        output:
+            identity_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/comprehensive/{seq_name}_ref_perc_iden.csv")
+        shell:
+            """
+            python3 ./scripts/create_new_csv_id_ana.py {input.inserts} {input.ref_csv} {output.identity_csv} 
+            """
+
+# Plot the percent identity by the percent coverage of the element for different TE classes/subclasses
+if IDEN and STAGE3:
+    rule comprehensive_garlic_plot_perc_identity:
+        input:
+            identity_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/comprehensive/{seq_name}_ref_perc_iden.csv"),
+            test_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv")
+        output:
+            plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_{prog}_perc_id.pdf")
+        params:
+            seq_len=config["seq_len"],
+            extras=config["extras"]
+        shell:
+            """
+            python3 ./scripts/plot_identity_vs_coverage.py {input.identity_csv} {input.test_csv} {params.seq_len} {output.plot} {params.extras:q}
+            """
+
+# Filter CSVs for specific TE types as designated in the config file
+if STAGE4:
+    rule selective_filter_csvs:
+        input:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv")
+        output:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_{prog}_{type}.csv")
+        params:
+            column=config["column"]
+        script:
+            "scripts/filter_csv.R"    
+
+# Define input csvs for the TE type statistics calculation
+if STAGE4:
+    def selective_stats_input_csvs(wildcards):
+        return expand(
+            os.path.join(
+                workflow.basedir,
+                "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_{prog}_{type}.csv"
+            ),
+	        seq_name=wildcards.seq_name,
+            prog=program_names_plus_ref,
+            type=target_types
+        )
+
+# Run MCC scores on specific TE types as designated in the config file
+if STAGE4:
+    rule selective_calculate_statistics:
+        input:
+            tests=selective_stats_input_csvs,
+            ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_" + REF_NAME + "_{type}.csv")
+        output:
+            stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/{seq_name}_{type}_stats.txt")
+        params:
+            seq_len=config["seq_len"]
+        run:
+            import subprocess, glob, os, re
+            seq_name = wildcards.seq_name
+            csv_type = wildcards.type
+            type = wildcards.type
+            ref_ext2 = config["ref_ext"]
+            csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/full/{type}/*_{csv_type}.csv")
+            if not csvs:
+                raise ValueError(f"No CSV files found for sequence {seq_name}")
+            ref_csvs = [f for f in csvs if ref_ext2 in os.path.basename(f)]
+            if not ref_csvs:
+                raise ValueError(f"No reference CSV found for {seq_name} with extension {ref_ext2}")
+            for ref_csv in ref_csvs:
+                base = os.path.basename(ref_csv)
+                match = re.search(rf"{re.escape(ref_ext2)}(?:_(.+))?\.csv$", base)
+                ref_type = match.group(1) if match else None
+
+                if ref_type:
+                    non_ref_csv = [f for f in csvs if f != ref_csv and f.endswith(f"{ref_type}.csv")]
+                else:
+                    non_ref_csv = [f for f in csvs if f != ref_csv]
+
+            cmd = [
+                "python3", 
+                "./scripts/generate_stats.py",
+                wildcards.type,
+                ref_csv,
+                str(params.seq_len),
+                output.stats,
+            ] + non_ref_csv
+            subprocess.run(cmd, check=True)
+
+# Run hexagon plot on specific TE types as designated in the config file
+if RADAR and STAGE4:
+    rule selective_statistics_radar_plot:
+        input:
+            stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/{seq_name}_{type}_stats.txt")
+        output:
+            plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/plots/{seq_name}_{type}_plot_stats.pdf")
+        shell:
+            """
+            python3 ./scripts/view_stats.py {input.stats} {output.plot} {wildcards.seq_name} {wildcards.type}
+            """
+
+#Generate CSVs for nested elements, including full length elements (hosts) and nested elements (nests)
+if NEST and STAGE4:
+    rule selective_nest_csvs:
+        input:
+            csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_" + REF_NAME + "_{type}.csv")
+        output:
+            csv1=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nest.csv"),
+            csv2=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_host.csv"),
+            csv3=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nonest.csv")
+        params:
+            seq_len=config["seq_len"]
+        shell:
+            """
+            python3 ./scripts/calculate_overlap_csvs.py {input.csv} {params.seq_len} {output.csv1} {output.csv2} {output.csv3}
+            """
+            
+if (PIE or NEST) and STAGE4:
+    rule selective_coverage_analysis:
+        input:
+            test=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_{prog}_{type}.csv"),
+            ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_" + REF_NAME + "_{type}.csv")
+        output:
+            cov_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/{type}/{seq_name}_{prog}_{type}_cov.csv")
+        params:
+            seq_len=config["seq_len"]
+        run:
+            import subprocess, glob, os, re
+            seq_name = wildcards.seq_name
+            prog = wildcards.prog
+            ref_ext3 = REF_NAME
+            type = wildcards.type
+            csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/full/{type}/*.csv")
+
+            # Reference CSV
+            ref_csvs = [f for f in csvs if ref_ext3 in os.path.basename(f)]
+            if len(ref_csvs) != 1:
+                raise ValueError(f"Expected exactly 1 reference CSV, found: {ref_csvs}")
+#            ref_csv = input.ref_csv
+            ref_csv = ref_csvs[0]
+            # Test CSV matching the current prog
+            test_csvs = [f for f in csvs if prog in os.path.basename(f)]
+            if len(test_csvs) != 1:
+                raise ValueError(f"Expected exactly 1 test CSV for prog {prog}, found: {test_csvs}")
+            test_csv = test_csvs[0]
+
+            cmd = [
+                "python3",
+                "./scripts/plot_covered.py",
+                seq_name,
+                "NO_PDF",
+                output.cov_csv,
+                str(params.seq_len),
+                ref_csv,
+                test_csv
+            ]
+            subprocess.run(cmd, check=True)
+                     
+# Define the CSVs necessary for the nested analysis
+if NEST and STAGE4:
+    def selective_nesting_test_csvs(wildcards):
+        return expand(
+            os.path.join(
+                workflow.basedir,
+                "output/cleaned_csvs/{seq_name}/coverage_csvs/{type}/{seq_name}_{prog}_{type}_cov.csv"
+            ),
+            seq_name=wildcards.seq_name,
+            prog=program_names,
+            type=target_types
+        )
+
+# Generate nesting TE plots
+if NEST and STAGE4:
+    rule selective_nesting_plot:
+        input:
+            host=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_host.csv"),
+            nest=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nest.csv"),
+            no_nest=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nonest.csv"),
+            tests=selective_nesting_test_csvs,
+            ref_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_" + REF_NAME + "_{type}.csv")
+        output:
+            plot=os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/plots/{seq_name}_{type}_nesting.pdf")
+        params:
+            seq_len=config["seq_len"]
+        run:
+            import glob, os, subprocess
+            seq_name = wildcards.seq_name
+            scale = wildcards.type
+            ref_ext3 = REF_NAME
+            type = wildcards.type
+            csvs = glob.glob(f"output/cleaned_csvs/{seq_name}/full/{type}/*.csv")
+            if not csvs:
+                raise ValueError(f"No CSV files found for sequence {seq_name}")
+            ref_csvs = [f for f in csvs if ref_ext3 in os.path.basename(f)]
+            if not ref_csvs:
+                raise ValueError(f"No reference CSV found for {seq_name} with extension {ref_ext3}")
+            for ref_csv in ref_csvs:
+                base = os.path.basename(ref_csv)
+                match = re.search(rf"{re.escape(ref_ext3)}(?:_(.+))?\.csv$", base)
+                ref_type = match.group(1) if match else None
+                non_ref_csv = [f for f in csvs if f != ref_csv]
+
+            cmd = [
+                "python3",
+                "./scripts/plot_nesting.py",
+                scale,
+                input.no_nest,
+                input.host,
+                input.nest,
+                str(params.seq_len),
+                output.plot,
+                seq_name,
+            ] + non_ref_csv
+            subprocess.run(cmd, check=True)

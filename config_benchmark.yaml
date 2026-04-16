@@ -1,0 +1,40 @@
+stg3: true
+
+stg4: true
+
+clean_eg: true
+
+clean_rm: true
+
+clean_edta: true
+
+ref_ext: "_Garlic"
+
+RM2_gff_ext: "_RM2.gff"
+
+RM2_fasta_ext: "_RM2.fa"
+
+EG_gff_ext: "_EG.gff"
+
+EDTA_gff_ext: "_EDTA.gff"
+
+seq_len: 100000000
+
+inserts_dir: "output/sim_fastas/dm6/dm6_split"
+
+extras: "Unknown"
+
+radar: true
+
+nest: true
+
+pie: true
+
+iden: true #make false if not using Garlic reference data
+
+test: false
+
+target_types:
+    - "LTR"
+
+column: "V5"

@@ -3,7 +3,7 @@
 plot_nesting.py
 
 Usage:
-    python3 plot_nesting.py ref_host.csv ref_nest.csv seq_len output_pdf seq_name non_ref1.csv non_ref2.csv ... non_refN.csv
+    python3 plot_nesting.py scale_tag ref_full.csv ref_host.csv ref_nest.csv seq_len output_pdf seq_name non_ref1.csv non_ref2.csv ... non_refN.csv
 """
 
 import sys
@@ -133,14 +133,16 @@ def is_int(x):
 
 def main():
 
-    host_csv = sys.argv[1]
-    nest_csv = sys.argv[2]
-    save_pdf = sys.argv[4]
-    test_csvs = sys.argv[6:]
-    model = sys.argv[5]
+    scale_tag = sys.argv[1]
+    ref_csv = sys.argv[2]
+    host_csv = sys.argv[3]
+    nest_csv = sys.argv[4]
+    save_pdf = sys.argv[6]
+    test_csvs = sys.argv[8:]
+    model = sys.argv[7]
     
     try:
-        seq_len = int(sys.argv[3])
+        seq_len = int(sys.argv[5])
     except ValueError:
         print("seq_len must be an integer")
         sys.exit(1)
@@ -153,7 +155,8 @@ def main():
 
     ref1_rows = read_rows_preserve_header(host_csv)
     ref2_rows = read_rows_preserve_header(nest_csv)
-
+    ref3_rows = read_rows_preserve_header(ref_csv)
+    
     results = {}
     bins = ["≤20%", "20–40%", "40–60%", "60–80%", ">80%"]
 
@@ -162,10 +165,11 @@ def main():
 
         p_cov_ref1 = compute_coverages_for_ref_rows(ref1_rows, identities)
         p_cov_ref2 = compute_coverages_for_ref_rows(ref2_rows, identities)
-
+        p_cov_ref3 = compute_coverages_for_ref_rows(ref3_rows, identities)
 
         binned1 = [assign_bin(p) for p in p_cov_ref1 if p is not None]
         binned2 = [assign_bin(p) for p in p_cov_ref2 if p is not None]
+        binned3 = [assign_bin(p) for p in p_cov_ref3 if p is not None]
 
         def proportions_from_binned_list(binned_list):
             counts = {b: 0 for b in bins}
@@ -181,8 +185,9 @@ def main():
 
         props1, total1 = proportions_from_binned_list(binned1)
         props2, total2 = proportions_from_binned_list(binned2)
+        props3, total3 = proportions_from_binned_list(binned3)
 
-        results[prog] = {"host": props1, "nest": props2, "totals": (total1, total2)}
+        results[prog] = {"all": props3, "host": props1, "nest": props2, "totals": (total3, total1, total2)}
 
     x = np.arange(len(bins))
     n_prog = len(programs)
@@ -191,13 +196,22 @@ def main():
     width = group_width / n_prog
 
     colors = plt.cm.tab10.colors
-    fig, (ax_host, ax_nest) = plt.subplots(
-        2, 1, figsize=(12, 12), sharex=True
+    fig, (ax_all, ax_host, ax_nest) = plt.subplots(
+        1, 3, figsize=(12, 12), sharex=True
     )
 
     for i, prog in enumerate(programs):
         color = colors[i % len(colors)]
         offset = (i - (n_prog - 1) / 2) * width
+
+        ax_all.bar(
+            x + offset,
+            results[prog]["all"],
+            width,
+            color=color,
+            edgecolor="none",
+            label=prog
+        )
 
         ax_host.bar(
             x + offset,
@@ -216,39 +230,53 @@ def main():
             edgecolor="none",
             label=prog
         )
-
-    leg = ax_host.legend(title="Program", loc="upper left", prop={"size": 12, "weight": "bold"})
+        
+    leg = ax_all.legend(title="Program", loc="upper left", prop={"size": 12, "weight": "bold"})
 
     leg.get_title().set_fontsize(12)
     leg.get_title().set_fontweight("bold")
 
+    fig.suptitle(
+        f"Coverage distribution of {model} {scale_tag} TEs across programs",
+        fontsize=18,
+        fontweight="bold"
+    )
+
+    fig.supxlabel("Percent coverage", fontsize=16, fontweight="bold")
+
     ax_host.set_title(
-        f"Coverage of {model} " r"$\it{Host}$" " TEs across programs",
-        fontsize=18, fontweight="bold"
+        r"$\it{Host}$",
+        fontsize=16
     )
 
     ax_nest.set_title(
-        f"Coverage of {model} " r"$\it{Nest}$" " TEs across programs",
-        fontsize=18, fontweight="bold"
+        r"$\it{Nested}$",
+        fontsize=16
     )
 
-    ax_nest.set_xlabel("Percent coverage", fontsize=16, fontweight="bold")
+    ax_all.set_title(
+        r"$\it{Non-nested}$",
+        fontsize=16,
+    )
 
     fig.supylabel("Percent of elements", fontsize=16, fontweight="bold")
 
     ax_nest.set_xticks(x)
-    ax_nest.set_xticklabels(bins, fontsize=12, fontweight="bold")
+    ax_nest.set_xticklabels(bins)
 
     y_min, y_max = 0, 100
     y_ticks = range(0, 101, 10)
 
     ax_host.set_ylim(y_min, y_max)
     ax_nest.set_ylim(y_min, y_max)
-
+    ax_all.set_ylim(y_min, y_max)
+    
     ax_host.set_yticks(y_ticks)
     ax_host.set_yticklabels(y_ticks, fontsize=12, fontweight="bold")
     ax_nest.set_yticks(y_ticks)
     ax_nest.set_yticklabels(y_ticks, fontsize=12, fontweight="bold")
+    ax_all.set_yticks(y_ticks)
+    ax_all.set_yticklabels(y_ticks, fontsize=12, fontweight="bold")
 
     plt.tight_layout()
     plt.savefig(save_pdf, dpi=300, bbox_inches="tight")

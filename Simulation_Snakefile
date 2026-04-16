@@ -1,0 +1,312 @@
+import glob
+import os
+import sys
+
+def print_custom_help():
+    help_text = f"""
+TE_Bench Snakemake Workflow, Stage 1 Simulation of TE FASTA Sequences with Garlic
+Simulates sequences with and without TE inserts based on model genomic data
+
+Usage:
+    snakemake -s Simulation_Snakefile [options] --cores N
+
+Optional configuration flags (from config_simulation.yaml, or override in command line):
+
+test         : Run test workflow using provided data from TE_Bench (default: False)
+dfam         : Run the simulation using user-specified Dfam data (default: True)
+repbase      : Run the simulation using user-specified RepBase data (default: False)
+size         : Specifies the length in base pairs to simulate per artificial sequence (default: 1000 for quick testing purposes)
+num_seqs     : Specifies the number of artificial sequences to simulate per provided model (default: 2)
+
+Examples:
+    snakemake -s Simulation_Snakefile --cores 1 --rerun-incomplete (ALL DEFAULTS)
+    snakemake -s Simulation_Snakefile --cores 1 --rerun-incomplete --config test=true repbase=true (RUN ON PROVIDED REPBASE TEST DATA)
+"""
+    print(help_text)
+    sys.exit(0)
+
+for i, arg in enumerate(sys.argv):
+    if arg.startswith("--config"):
+        if i+1 < len(sys.argv):
+            config_args = sys.argv[i+1].split(",")
+            for j, c in enumerate(config_args):
+                if c.lower() in ["help", "h"]:
+                    config_args[j] = "help=true"
+            sys.argv[i+1] = ",".join(config_args)
+
+if any("help=true" in arg.lower() for arg in sys.argv):
+    print_custom_help()
+
+def get_flag(config, key, default=True):
+    """
+    Read a boolean flag from Snakemake config.
+    Returns True/False.
+    Default is True if the key is missing.
+    Accepts 'true'/'false' (case-insensitive) or actual booleans.
+    """
+    val = config.get(key, default)
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() == "true"
+
+configfile: "config_simulation.yaml"
+
+TEST = get_flag(config, "test", default=False)
+REPBASE = get_flag(config, "repbase", default=False)
+DFAM = get_flag(config, "dfam")
+
+if REPBASE:
+    DFAM = False
+
+if TEST and REPBASE:
+    fasta_files = glob.glob("input/modeldata/testing/*RBTEST.fa")
+    seq_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+    model_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+    print("Running Stage1 with RepBase on test model:", model_names)
+    print(f"DFAM: {DFAM}, REPBASE: {REPBASE}")
+
+if TEST and DFAM:
+    fasta_files = glob.glob("input/modeldata/testing/*DFTEST.fa")
+    seq_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+    model_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+    print("Running Stage1 with Dfam on test model:", model_names)
+    print(f"DFAM: {DFAM}, REPBASE: {REPBASE}")
+
+if not TEST:
+    fasta_files = glob.glob("input/modeldata/*.fa")
+    seq_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+    model_names = [os.path.splitext(os.path.basename(f))[0] for f in fasta_files]
+    print("Running Stage1 on models:", model_names)
+    print(f"DFAM: {DFAM}, REPBASE: {REPBASE}")
+
+#configfile: "config_simulation.yaml"
+
+localrules: split_inserts
+
+rule all:
+    input:
+        [
+            expand(
+                os.path.join(workflow.basedir, "output/model_data/{seq_name}"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.inserts.W1000.data"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.repeats.W1000.data"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.GCt.W1000.data"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.kmer.K4.W1000.data"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.fasta"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.inserts"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.base.fasta"),
+                seq_name=seq_names
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split/{seq_name}_base_{num}.fasta"),
+                seq_name=seq_names,
+                num=range(1, config["num_seqs"] + 1)
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split/{seq_name}_{num}.fasta"),
+                seq_name=seq_names,
+                num=range(1, config["num_seqs"] + 1)
+            ),
+            expand(
+                os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split/{seq_name}_{num}.inserts"),
+                seq_name=seq_names,
+                num=range(1, config["num_seqs"] + 1)
+            )
+        ]
+
+if TEST and REPBASE:
+    rule garlic_model_build:
+        input:
+            fasta=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.fa"),
+            repeats=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.align"),
+            trf=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.trf.bed"),
+            genes=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.gtf")
+        output:
+            directory(os.path.join(workflow.basedir, "output/model_data/{seq_name}")),
+            kmer=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.kmer.K4.W1000.data"),
+            inserts=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.inserts.W1000.data"),
+            repeats=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.repeats.W1000.data"),
+            gc=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.GCt.W1000.data")
+        params:
+            perl_script=os.path.join(workflow.basedir, "scripts/createModel")
+        conda:
+            "envs/perl.yaml"
+        resources:
+            mem_mb = 10000,
+            runtime = 120
+        shell:
+            """
+            ./scripts/garlic_model_build.sh {params.perl_script} {wildcards.seq_name} {input.fasta} {input.repeats} {input.trf} {input.genes}
+            """
+
+if TEST and DFAM:
+    rule garlic_model_build:
+        input:
+            fasta=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.fa"),
+            repeats=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.dfam.align"),
+            trf=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.trf.bed"),
+            genes=os.path.join(workflow.basedir, "input/modeldata/testing/{seq_name}.gtf")
+        output:
+            directory(os.path.join(workflow.basedir, "output/model_data/{seq_name}")),
+            kmer=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.kmer.K4.W1000.data"),
+            inserts=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.inserts.W1000.data"),
+            repeats=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.repeats.W1000.data"),
+            gc=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.GCt.W1000.data")
+        params:
+            perl_script=os.path.join(workflow.basedir, "scripts/createModel")
+        conda:
+            "envs/perl.yaml"
+        resources:
+            mem_mb = 10000,
+            runtime = 120
+        shell:
+            """
+            ./scripts/garlic_model_build.sh {params.perl_script} {wildcards.seq_name} {input.fasta} {input.repeats} {input.trf} {input.genes}
+            """
+
+if not TEST:
+    rule garlic_model_build:
+        input:
+            fasta=os.path.join(workflow.basedir, "input/modeldata/{seq_name}.fa"),
+            repeats=os.path.join(workflow.basedir, "input/modeldata/{seq_name}.align"),
+            trf=os.path.join(workflow.basedir, "input/modeldata/{seq_name}.trf.bed"),
+            genes=os.path.join(workflow.basedir, "input/modeldata/{seq_name}.gtf")
+        output:
+            directory(os.path.join(workflow.basedir, "output/model_data/{seq_name}")),
+            kmer=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.kmer.K4.W1000.data"),
+            inserts=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.inserts.W1000.data"),
+            repeats=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.repeats.W1000.data"),
+            gc=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.GCt.W1000.data")
+        params:
+            perl_script=os.path.join(workflow.basedir, "scripts/createModel")
+        conda:
+            "envs/perl.yaml"
+        resources:
+            mem_mb = 10000,
+            runtime = 120
+        shell:
+            """
+            ./scripts/garlic_model_build.sh {params.perl_script} {wildcards.seq_name} {input.fasta} {input.repeats} {input.trf} {input.genes}
+            """
+
+rule seqkit_split:
+    input:
+        fastas=expand(
+            os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.fasta"),
+            seq_name=seq_names
+        ),
+        bases=expand(
+            os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.base.fasta"),
+            seq_name=seq_names
+        )
+    output:
+        bases=expand(
+            os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split/{seq_name}_base_{num}.fasta"),
+            seq_name=seq_names,
+            num=range(1, config["num_seqs"] + 1)    
+        ),
+        fastas=expand(
+            os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split/{seq_name}_{num}.fasta"),
+            seq_name=seq_names,
+            num=range(1, config["num_seqs"] + 1)
+        )
+    resources:
+        mem_mb = 5000
+    conda:
+        "envs/seqkit.yaml"
+    params:
+        model=seq_names
+    shell:
+        """
+        ./scripts/seqkit.sh {params.model}
+        """
+
+rule split_inserts:
+    input:
+        inserts=expand(
+            os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.inserts"),
+            seq_name=seq_names
+        )
+    output:
+        fastas=expand(
+            os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_split/{seq_name}_{num}.inserts"),
+            seq_name=seq_names,
+            num=range(1, config["num_seqs"] + 1)
+        )
+    params:
+        model=seq_names
+    shell:
+        """
+        ./scripts/split_inserts.py {params.model}
+        """
+
+if REPBASE:
+    rule garlic_sequence_generation:
+        input:
+            kmer=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.kmer.K4.W1000.data"),
+            inserts=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.inserts.W1000.data"),
+            repeats=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.repeats.W1000.data"),
+            gc=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.GCt.W1000.data")
+        output:
+            fasta=os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.fasta"),
+            inserts=os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.inserts"),
+            base=os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.base.fasta")
+        params:
+            perl_script=os.path.join(workflow.basedir, "scripts/createFakeSequence_repbase"),
+            size=config["size"],
+            num_seqs=config["num_seqs"]
+        conda:
+             "envs/perl.yaml"
+        resources:
+            mem_mb = 5000,
+            runtime = 1440
+        shell:
+            """
+            ./scripts/garlic_sequence_gen.sh {params.perl_script} {wildcards.seq_name} {params.size} {wildcards.seq_name}_sim {params.num_seqs}
+            """
+
+if DFAM:
+    rule garlic_sequence_generation:
+        input:
+            kmer=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.kmer.K4.W1000.data"),
+            inserts=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.inserts.W1000.data"),
+            repeats=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.repeats.W1000.data"),
+            gc=os.path.join(workflow.basedir, "output/model_data/{seq_name}/{seq_name}.GCt.W1000.data")
+        output:
+            fasta=os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.fasta"),
+            inserts=os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.inserts"),
+            base=os.path.join(workflow.basedir, "output/sim_fastas/{seq_name}/{seq_name}_sim.base.fasta")
+        params:
+            perl_script=os.path.join(workflow.basedir, "scripts/createFakeSequence_dfam"),
+            size=config["size"],
+            num_seqs=config["num_seqs"]
+        conda:
+             "envs/perl.yaml"
+        resources:
+            mem_mb = 30000,
+            runtime = 1440
+        shell:
+            """
+            ./scripts/garlic_sequence_gen.sh {params.perl_script} {wildcards.seq_name} {params.size} {wildcards.seq_name}_sim {params.num_seqs}
+            """

@@ -1,0 +1,5 @@
+num_sequences: 2
+
+GARLIC_LOG_FILE: "input/testdata/droMelTEST_garlic_test.log"
+
+test: false
