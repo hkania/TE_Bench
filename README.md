@@ -2,11 +2,108 @@
 
 # Welcome to TE_Bench
 ## A Snakemake workflow associated with the manuscript *TE_Bench: A Foundational Benchmarking Workflow for Transposable Element Discovery Pipelines* (submitted).
-The following is a guide on how to download and test the associated Snakemake workflows. You can adapt the workflows to suit your data, and minimal instructions on how to do so are provided!
+The following provides two guides. The Quickstart Guide details how to download and test the associated Snakemake workflows. The User Guide details how to run the workflows with non-test data.
 * We regret we are unable to provide specific download instructions beyond those below. There are many resources available online if you run into computing environments beyond those described here.
 
 * A general note to be careful with naming conventions if moving between the provided Snakefile options! **Before running any snakemake, be sure your config file(s) and input(s) match! You can perform a test run using the -n flag in Snakemake.**
 
+# Quick Start Guide
+## TE_Bench Installation
+_We recommend cloning TE_Bench to a cluster environment with SLURM, as the Simulation and Annotation Generation (Stages 1 & 2) are configured to work with the SLURM job manager on HPC. You can use other executors/plugins, we do not provide instructions to do so, and more information can be found [here](https://snakemake.github.io/snakemake-plugin-catalog/index.html) _(external, unmonitored link)_._
+
+1. Clone the repository to your cluster _**HIGHLY RECOMMENDED**_ or your local computer
+* If you have git installed (recommended)
+> ```
+> git clone https://github.com/hkania/TE_Bench.git
+> ```
+
+* If you do not have git installed, you can also use wget
+> ```
+> wget https://github.com/hkania/TE_Bench/archive/refs/heads/main.zip
+> gunzip TE_Bench
+> ```
+
+* Or you can perform a basic download on your local computer or cluster (_**least recommended**_)
+  * Click the down arrow next to the 'Code' button at the top of this repository and downlaod the zip file.
+
+2. Generate the TE_Bench Snakemake conda environment
+* We use Snakemake version 9.11.4 with the provided snakemake.yml file. This command assumes you have a miniconda installation.
+
+* Navigate into your unzipped TE_Bench repository and type the following command.
+> ```
+> conda env create -f snakemake.yaml
+> ```
+> This command will create an environment called TE_Bench.
+
+3. Download the test data while in your TE_Bench folder.
+
+_Since GitHub does not include files >50MB in clones, these are the steps to acquire the input files necessary for Quickstart!_
+
+* If you have git LFS (large file storage) installed
+> ```
+> git lfs pull
+> tar -xvf input.tar.gz
+> ```
+
+* If you do not have git LFS, you can still wget the input file.
+
+> ```
+> wget https://github.com/hkania/TE_Bench/raw/refs/heads/main/input.tar.gz
+> tar -xvf input.tar.gz
+> ```
+
+* If both the above do not work for you, download `input.tar.gz` from the Duke Research Data Repository [doi.org/10.7924/r4r509](https://doi.org/10.7924/r4r509)
+  * If you get a 403 Forbidden Error when trying to access the above line, try to manually paste `https://doi.org/10.7924/r4r509` into your browser. The server may be experiencing a security block.
+  * We HIGHLY recommend one of the other two download options. But, if necessary, this option will download the `input.tar.gz` file to your local computer. Then, you will need to move `input.tar.gz` to the TE_Bench repository. If TE_Bench was cloned to a cluster, you can use a command like `scp`.
+
+4. Activate your TE_Bench environment
+> ```
+> conda activate TE_Bench
+> ```
+
+5. Run the Install_Snakefile to complete installation and configuration of scripts with TE databases.
+* [**Install_Snakefile**](https://github.com/hkania/TE_Bench/blob/main/Install_Snakefile) aids in installing the required TE Dfam database and altering TE_Bench scripts to work with the Dfam database.
+  * Add `--config help=true` to the `snakemake` command above to see user configuration options.
+  * By default, Install_Snakefile will download and unzip Dfam-curated_only-1.embl.gz from Dfam using wget or curl.
+  * By default, Install_Snakefile will NOT configure RepBase, but optional flags make it possible to do so.
+    
+  * To run with defaults:
+    
+    > ```
+    > snakemake -s Install_Snakefile
+    > ```
+    
+    * You should see the following once it starts running. It will complete in ~5-10 minutes depending on your download speed.
+    
+    > ```
+    > job                     count
+    > --------------------  -------
+    > all                         1
+    > dfam_script_patch           1
+    > download_dfam               1
+    > total                       3
+    > ```
+    
+  * Non-default User Options
+    * If you want to use a different Dfam .embl file, you can do the following:
+      * Before running the `snakemake` command, add `--config dfam_version=FULL_URL` to the command. Or you can alter the dfam_version key in `config_install.yaml` with your compressed embl URL of choice.
+  
+  
+    * If you want to use RepBase, which is only available to paid RepBase users as of the publication of this manuscript, you can do the following:
+      > _note we provide very minimal instructions!!_
+        * Upload the RepBaseXX.XX.embl.tar.gz file to the `/output/model_data/RepBase/` directory
+          * Fill in the `XX` areas in the commands below with your specific RepBase edition and URL
+      > ```
+      > gunzip RepbaseXX.XX.embl.tar.gz
+      > 
+      > tar -xvf RepbaseXX.XX.embl.tar
+      > 
+      > cd RepbaseXX.XX.embl
+      > 
+      > cat *.ref > RepBase.embl
+      > ```
+      * Then, before running the `snakemake` command, add `--config repbase_version=RepBaseXX.XX` to the command. Or you can alter the repbase_version key in `config_install.yaml`.
+--------------------ENDED HERE ON APRIL 16 9:58PM
 ![All](https://github.com/hkania/TE_Bench/blob/b2a07fb666b53b5dc1f01c5bb8eed97373543ff7/.images/Full_Workflow.png?raw=true)
 # Snakefile Options
 There are multiple instances of Snakefiles available. 
@@ -61,8 +158,6 @@ Instructions are provided for use on local computer or cluster via terminal with
 > ```
 > This command will create an environment called TE_Bench.
 
-#### 4. Check that you have the necessary environment yamls
-* In the `envs/` directory, you should have blast2.yaml, perl.yaml, and seqkit.yaml
 
 #### 5. If you are going to run a Snakefile, you must activate your Snakemake environment
 > ```
@@ -763,3 +858,6 @@ Data and scripts provided by
 [Realistic artificial DNA sequences as negative controls for computational genomics. Caballero J, Smit AF, Hood L, Glusman G. Nucl. Acids Res. 2014 doi: 10.1093/nar/gku356 ](https://github.com/caballero/Garlic)
 
 [Kania, H. P., Seifert, S. A., & Yoder, A. D. (2025). Data from: A foundational benchmarking workflow for transposable element discovery pipelines. Duke Research Data Repository. https://doi.org/10.7924/r4m61sj94](https://doi.org/10.7924/r4m61sj94)
+
+
+  * If you are only interested in the Benchmark capabilities (Stages 3 & 4), you can optionally clone to a local device. This is only applicable if you are familiar with the TE_Bench-expected 8-column CSV format and have reference data on-hand._
