@@ -6,6 +6,8 @@ The [Quickstart Guide](https://github.com/hkania/TE_Bench/blob/main/README.md#qu
 
 The [User Guide](https://github.com/hkania/TE_Bench#user-guide) details how to run the workflows with non-test data.
 
+The [TE Discovery Illustrative Example](https://github.com/hkania/TE_Bench#te-discovery) shows how to use three TE annotation pipelines with TE_Bench.
+
 * We regret we are unable to provide specific download instructions beyond those below. There are many resources available online if you run into computing environments beyond those described here.
 
 # Quick Start Guide
@@ -464,7 +466,7 @@ Benchmark_Snakefile requires these files regardless of what tool(s) you used for
 
 **Place CSV files within `output/cleaned_csvs/{seq_name}/full/comprehensive`.** This indicates that CSV files with full (whole sequence) TE annotation are ready for snakemake comprehensive benchmarking.
 
-**If performing query cleaning with TE_Bench, you will want to place the respective TE annotation data files in `input/annotationdata`.** See our TE Discovery Illustrative Example below for assistance, especially with regard to file extensions.
+**If performing query cleaning with TE_Bench, you will want to place the respective TE annotation data files in `input/annotationdata`.** See our [TE Discovery Illustrative Example](https://github.com/hkania/TE_Bench#te-discovery) below for assistance, especially with regard to file extensions.
 
 #### BENCHMARK_SNAKEFILE EXPECTED CSV FORMAT
 | Col1  | Col2 | Col3 | Col4 | Col5 | Col6 | Col7 | Col8
