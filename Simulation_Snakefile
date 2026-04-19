@@ -8,7 +8,7 @@ TE_Bench Snakemake Workflow, Stage 1 Simulation of TE FASTA Sequences with Garli
 Simulates sequences with and without TE inserts based on model genomic data
 
 Usage:
-    snakemake -s Simulation_Snakefile [options] --cores N
+    snakemake --profile profile/ --conda-frontend conda --conda-prefix ~/.snakemake/conda -s Simulation_Snakefile [options]
 
 Optional configuration flags (from config_simulation.yaml, or override in command line):
 
