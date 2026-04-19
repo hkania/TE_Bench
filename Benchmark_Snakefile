@@ -29,6 +29,7 @@ seq_len       : Length of reference file(s) sequence (default: 100000000)
 inserts_dir   : Directory containing the inserts file (default: input/annotationdata/testing for test. For non-test data generated with earlier workflow stages, please specify the output/sim_fastas/seq_name/seq_name_split directory and replace seq_name with your overal model sequence name to capture all iterations of a simulation. Does not apply if iden flag is made false due to non-Garlic reference file(s))
 extras        : Additional category within 'column' (see below) to include in pie charts and identity regressions (default: Unknown elements)
 column        : Column to filter CSV files on (default: V5 which holds major TE class)
+target_types  : TE types for stage3b analysis (default: LTR. To include additional classes, specify with target_types=LINE,SINE,LTR ...)
 
 Examples:
     snakemake -s Benchmark_Snakefile --cores 1 --rerun-incomplete (ALL DEFAULTS)
