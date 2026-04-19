@@ -4,7 +4,7 @@
 ## A Snakemake workflow associated with the manuscript *TE_Bench: A Foundational Benchmarking Workflow for Transposable Element Discovery Pipelines* (submitted).
 The [Quickstart Guide](https://github.com/hkania/TE_Bench/blob/main/README.md#quick-start-guide) details how to download and test the associated Snakemake workflows. 
 
-The [User Guide details](https://github.com/hkania/TE_Bench#user-guide) how to run the workflows with non-test data.
+The [User Guide](https://github.com/hkania/TE_Bench#user-guide) details how to run the workflows with non-test data.
 
 * We regret we are unable to provide specific download instructions beyond those below. There are many resources available online if you run into computing environments beyond those described here.
 
