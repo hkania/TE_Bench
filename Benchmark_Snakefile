@@ -10,8 +10,8 @@ Usage:
 
 Optional configuration flags (from config_benchmark.yaml):
 
-stg3          : Run stage 3 analysis (default: True)
-stg4          : Run stage 4 TE type analysis (default: True)
+stg3a         : Run stage 3a analysis (default: True)
+stg3b         : Run stage 3b TE type analysis (default: True)
 clean_eg      : Run earlGrey-like CSV generation (default: True)
 clean_rm      : Run RepeatModeler2-like CSV generation (default: True)
 clean_edta    : Run EDTA-like CSV generation (default: True)
@@ -69,8 +69,8 @@ CLEAN_EG = get_flag(config, "clean_eg")
 CLEAN_RM = get_flag(config, "clean_rm")
 CLEAN_EDTA = get_flag(config, "clean_edta")
 RADAR = get_flag(config, "radar")
-STAGE3 = get_flag(config, "stg3")
-STAGE4 = get_flag(config, "stg4")
+STAGE3a = get_flag(config, "stg3")
+STAGE3b = get_flag(config, "stg4")
 NEST = get_flag(config, "nest")
 PIE = get_flag(config, "pie")
 IDEN = get_flag(config, "iden")
@@ -109,12 +109,12 @@ rule all:
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/{seq_name}_stats.txt"),
                 seq_name=seq_names
-            ) if STAGE3 else []
+            ) if STAGE3a else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_plot_stats.pdf"),
                 seq_name=seq_names
-            ) if (RADAR and STAGE3) else []
+            ) if (RADAR and STAGE3a) else []
             ),
             expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv"),
@@ -124,17 +124,17 @@ rule all:
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nest.csv"),
                 seq_name=seq_names
-            ) if (NEST and STAGE3) else []
+            ) if (NEST and STAGE3a) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_host.csv"),
                 seq_name=seq_names
-            ) if (NEST and STAGE3) else []
+            ) if (NEST and STAGE3a) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_nonest.csv"),
                 seq_name=seq_names
-            ) if (NEST and STAGE3) else []
+            ) if (NEST and STAGE3a) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_{prog}_coverage_piechart.pdf"),
@@ -146,73 +146,73 @@ rule all:
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/comprehensive/{seq_name}_{prog}_cov.csv"),
                 seq_name=seq_names,
                 prog=program_names
-            ) if ((PIE or NEST) and STAGE3) else []
+            ) if ((PIE or NEST) and STAGE3a) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/comprehensive/{seq_name}_ref_perc_iden.csv"),
                 seq_name=seq_names
-            ) if (IDEN and STAGE3) else []
+            ) if (IDEN and STAGE3a) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_{prog}_perc_id.pdf"),
                 seq_name=seq_names,
                 prog=program_names
-            ) if (IDEN and STAGE3) else []
+            ) if (IDEN and STAGE3a) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/plots/{seq_name}_nesting.pdf"),
                 seq_name=seq_names
-            ) if (NEST and STAGE3) else []
+            ) if (NEST and STAGE3a) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_{prog}_{type}.csv"),
                 type=target_types,
                 seq_name=seq_names,
                 prog=program_names_plus_ref
-            ) if STAGE4 else []
+            ) if STAGE3b else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/{seq_name}_{type}_stats.txt"),
                 type=target_types,
                 seq_name=seq_names
-            ) if STAGE4 else []
+            ) if STAGE3b else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/plots/{seq_name}_{type}_plot_stats.pdf"),
                 type=target_types,
                 seq_name=seq_names
-            ) if (RADAR and STAGE4) else []
+            ) if (RADAR and STAGE3b) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/plots/{seq_name}_{type}_nesting.pdf"),
                 seq_name=seq_names,
                 type=target_types
-            ) if (NEST and STAGE4) else []
+            ) if (NEST and STAGE3b) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nest.csv"),
                 seq_name=seq_names,
                 type=target_types
-            ) if (NEST and STAGE4) else []
+            ) if (NEST and STAGE3b) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_host.csv"),
                 seq_name=seq_names,
                 type=target_types
-            ) if (NEST and STAGE4) else []
+            ) if (NEST and STAGE3b) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_nonest.csv"),
                 seq_name=seq_names,
                 type=target_types
-            ) if (NEST and STAGE4) else []
+            ) if (NEST and STAGE3b) else []
             ),
             (expand(
                 os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/coverage_csvs/{type}/{seq_name}_{prog}_{type}_cov.csv"),
                 seq_name=seq_names,
                 prog=program_names,
                 type=target_types
-            ) if (NEST and STAGE4) else []
+            ) if (NEST and STAGE3b) else []
             ),
         ]
 
@@ -285,7 +285,7 @@ if CLEAN_EDTA and not TEST:
             "scripts/EDTA_gff_to_csv.R"
 
 #Generate CSVs for nested elements, including full length elements (hosts) and nested elements (nests)
-if NEST and STAGE3:
+if NEST and STAGE3a:
     rule comprehensive_nest_csvs:
         input:
             csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}" + ref_csv_ext)
@@ -301,7 +301,7 @@ if NEST and STAGE3:
             """
 
 # Define input csvs for the statistics calculation
-if STAGE3:
+if STAGE3a:
     def comprehensive_stats_input_csvs(wildcards):
         return expand(
             os.path.join(
@@ -313,7 +313,7 @@ if STAGE3:
         )
 
 # Generate statistics across the whole genome and all inserted elements
-if STAGE3:
+if STAGE3a:
     rule comprehensive_calculate_statistics:
         input:
             tests=comprehensive_stats_input_csvs,
@@ -350,7 +350,7 @@ if STAGE3:
             subprocess.run(cmd, check=True)
 
 # Generate hexagon plot across the whole genome and all inserted elements
-if RADAR and STAGE3:
+if RADAR and STAGE3a:
     rule comprehensive_statistics_radar_plot:
         input:
             stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/comprehensive/{seq_name}_stats.txt")
@@ -364,7 +364,7 @@ if RADAR and STAGE3:
             """
 
 # Define the CSVs necessary for the nested analysis
-if NEST and STAGE3:
+if NEST and STAGE3a:
     def comprehensive_nesting_test_csvs(wildcards):
         return expand(
             os.path.join(
@@ -376,7 +376,7 @@ if NEST and STAGE3:
         )
 
 # Generate nesting TE plots
-if NEST and STAGE3:
+if NEST and STAGE3a:
     rule comprehensive_nesting_plot:
         input:
             host=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/comprehensive/{seq_name}_host.csv"),
@@ -422,7 +422,7 @@ if NEST and STAGE3:
 
 
 # Build nested pie chart depicting total number of elements in reference file by TE type and percent of elements covered by each test pipeline
-if (PIE or NEST) and STAGE3:
+if (PIE or NEST) and STAGE3a:
     rule comprehensive_coverage_analysis:
         input:
             test=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv"),
@@ -469,7 +469,7 @@ if (PIE or NEST) and STAGE3:
             subprocess.run(cmd, check=True)
 
 # Calculate the percent identity of each inserted TE with its TE consensus (from RepBase or Dfam -- generated from RepeatMasker)
-if IDEN and STAGE3:
+if IDEN and STAGE3a:
     rule comprehensive_garlic_perc_identity:
         input:
             inserts=os.path.join(config["inserts_dir"] + "/{seq_name}.inserts"),
@@ -482,7 +482,7 @@ if IDEN and STAGE3:
             """
 
 # Plot the percent identity by the percent coverage of the element for different TE classes/subclasses
-if IDEN and STAGE3:
+if IDEN and STAGE3a:
     rule comprehensive_garlic_plot_perc_identity:
         input:
             identity_csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/identity_csvs/comprehensive/{seq_name}_ref_perc_iden.csv"),
@@ -498,7 +498,7 @@ if IDEN and STAGE3:
             """
 
 # Filter CSVs for specific TE types as designated in the config file
-if STAGE4:
+if STAGE3b:
     rule selective_filter_csvs:
         input:
             csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/comprehensive/{seq_name}_{prog}.csv")
@@ -510,7 +510,7 @@ if STAGE4:
             "scripts/filter_csv.R"    
 
 # Define input csvs for the TE type statistics calculation
-if STAGE4:
+if STAGE3b:
     def selective_stats_input_csvs(wildcards):
         return expand(
             os.path.join(
@@ -523,7 +523,7 @@ if STAGE4:
         )
 
 # Run MCC scores on specific TE types as designated in the config file
-if STAGE4:
+if STAGE3b:
     rule selective_calculate_statistics:
         input:
             tests=selective_stats_input_csvs,
@@ -565,7 +565,7 @@ if STAGE4:
             subprocess.run(cmd, check=True)
 
 # Run hexagon plot on specific TE types as designated in the config file
-if RADAR and STAGE4:
+if RADAR and STAGE3b:
     rule selective_statistics_radar_plot:
         input:
             stats=os.path.join(workflow.basedir, "output/stats/{seq_name}/{type}/{seq_name}_{type}_stats.txt")
@@ -577,7 +577,7 @@ if RADAR and STAGE4:
             """
 
 #Generate CSVs for nested elements, including full length elements (hosts) and nested elements (nests)
-if NEST and STAGE4:
+if NEST and STAGE3b:
     rule selective_nest_csvs:
         input:
             csv=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_" + REF_NAME + "_{type}.csv")
@@ -592,7 +592,7 @@ if NEST and STAGE4:
             python3 ./scripts/calculate_overlap_csvs.py {input.csv} {params.seq_len} {output.csv1} {output.csv2} {output.csv3}
             """
             
-if (PIE or NEST) and STAGE4:
+if (PIE or NEST) and STAGE3b:
     rule selective_coverage_analysis:
         input:
             test=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/full/{type}/{seq_name}_{prog}_{type}.csv"),
@@ -634,7 +634,7 @@ if (PIE or NEST) and STAGE4:
             subprocess.run(cmd, check=True)
                      
 # Define the CSVs necessary for the nested analysis
-if NEST and STAGE4:
+if NEST and STAGE3b:
     def selective_nesting_test_csvs(wildcards):
         return expand(
             os.path.join(
@@ -647,7 +647,7 @@ if NEST and STAGE4:
         )
 
 # Generate nesting TE plots
-if NEST and STAGE4:
+if NEST and STAGE3b:
     rule selective_nesting_plot:
         input:
             host=os.path.join(workflow.basedir, "output/cleaned_csvs/{seq_name}/nest_csvs/{type}/{seq_name}_{type}_host.csv"),
