@@ -255,7 +255,7 @@ def main():
     )
 
     ax_all.set_title(
-        r"$\it{Non-nested}$",
+        r"$\it{Not in Nest}$",
         fontsize=16,
     )
 

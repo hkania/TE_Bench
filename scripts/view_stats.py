@@ -75,7 +75,7 @@ for idx, (method, values) in enumerate(stats_dict.items()):
         continue
     values = values + values[:1]
     color = colors[idx % len(colors)]
-    ax.plot(angles, values, color=color, linewidth=1.5, linestyle='solid', label=method)
+    ax.plot(angles, values, color=color, linewidth=1.5, linestyle='solid', label=method, alpha=0.6)
 
 ax.set_xticks(angles[:-1])
 ax.set_xticklabels(stat_labels, fontsize=12)
