@@ -20,7 +20,7 @@ EDTA_gff_ext: "_EDTA.gff"
 
 seq_len: 100000000
 
-inserts_dir: "output/sim_fastas/dm6/dm6_split"
+inserts_dir: "input/annotationdata/testing"
 
 extras: "Unknown"
 
