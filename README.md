@@ -428,7 +428,7 @@ AnnotationGen_Snakefile requires three file types to generate GFF and CSV annota
     > ``` 
     
 ### [Outputs](https://github.com/hkania/TE_Bench/blob/7ed894260b9b84e4ef213c2868f338a29e99a9a7/.images/Annotation_Scripts.png)
-![AnnotatOutput](https://github.com/hkania/TE_Bench/blob/7ed894260b9b84e4ef213c2868f338a29e99a9a7/.images/Annotation_Scripts.png?raw=true)
+![AnnotatOutput](https://github.com/hkania/TE_Bench/blob/da470f95900241acae2dd2966aa0da780b48b4a5/.images/Annotation_Scripts.png?raw=true)
 Once AnnotationGen_Snakefile completes, you will have the following outputs
 
 1. Model build files:  
