@@ -3,7 +3,7 @@
 # Welcome to TE_Bench
 ## A Snakemake workflow associated with the manuscript *TE_Bench: A Foundational Benchmarking Workflow for Transposable Element Discovery Pipelines* (submitted).
 
-![All](https://github.com/hkania/TE_Bench/blob/109e9990eda9997e72ca696fd2a16f9c89e69d1d/.images/Full_Workflow2.png?raw=true)
+![All](https://github.com/hkania/TE_Bench/blob/609da477fe405277c63ccd86be62aa7985b0fa10/.images/Full_Workflow2.png?raw=true)
 # Guides
 The [Quickstart Guide](https://github.com/hkania/TE_Bench/blob/main/README.md#quick-start-guide) details how to download and test the associated Snakemake workflows. 
 
@@ -447,7 +447,7 @@ Once AnnotationGen_Snakefile completes, you will have the following outputs
 
 
 ## 3. [**Benchmark_Snakefile**](https://github.com/hkania/TE_Bench/blob/main/Benchmark_Snakefile), **Workflow Stage 3**
-![Benchmark](https://github.com/hkania/TE_Bench/blob/3bd0ce2be1e19dacbde8b9429768fa4a94b7c7b7/.images/Benchmark_Workflow.png?raw=true)
+![Benchmark](https://github.com/hkania/TE_Bench/blob/609da477fe405277c63ccd86be62aa7985b0fa10/.images/Benchmark_Workflow.png?raw=true)
 This stage allow you to generate statistics and data visualizations for a given set of annotation GFF files. You can choose to set either the GARLIC file as the reference or a correctly formatted CSV file from another source as the reference.
 
   * By default, Benchmark_Snakefile will run both Stage 3a (comprehensive benchmarking of all TEs) and Stage 3b (selective benchmarking of select TEs, default LTRs in column V5). 
@@ -534,7 +534,7 @@ Benchmark_Snakefile requires these files regardless of what tool(s) you used for
     > ```
 
 ### Outputs
-![BenchOutputA](https://github.com/hkania/TE_Bench/blob/e6d49ea311853a14b0b1e895d588c8ead9fbdaa5/.images/Bench_A_Scripts.png?raw=true)
+![BenchOutputA](https://github.com/hkania/TE_Bench/blob/609da477fe405277c63ccd86be62aa7985b0fa10/.images/Bench_A_Scripts.png?raw=true)
 Once Benchmark_Snakefile completes, you will have some subset of the following outputs, or all if you ran Garlic simulations with complete comprehensive benchmarking.
 > model = {seq_name}, program = {prog}
 
@@ -570,7 +570,7 @@ Once Benchmark_Snakefile completes, you will have some subset of the following o
 
     * output/stats/{seq_name}/comprehensive/plots/{seq_name}_nesting.pdf -- _One three-panel barplot per model sequence showing the distribution of coverage across the nested TE status categories for all tested TE annotations._
 
-![BenchOutputB](https://github.com/hkania/TE_Bench/blob/e6d49ea311853a14b0b1e895d588c8ead9fbdaa5/.images/Bench_B_Scripts.png?raw=true)
+![BenchOutputB](https://github.com/hkania/TE_Bench/blob/609da477fe405277c63ccd86be62aa7985b0fa10/.images/Bench_B_Scripts.png?raw=true)
 Once Benchmark_Snakefile completes, you will have some subset of the following outputs, or all if you ran Garlic simulations with complete selective benchmarking.
 > model = {seq_name}, program = {prog}, type = {type} where it can be any number of tested TE types within the specified filtered column.
         
