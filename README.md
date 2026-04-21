@@ -3,7 +3,7 @@
 # Welcome to TE_Bench
 ## A Snakemake workflow associated with the manuscript *TE_Bench: A Foundational Benchmarking Workflow for Transposable Element Discovery Pipelines* (submitted).
 
-![All](https://github.com/hkania/TE_Bench/blob/609da477fe405277c63ccd86be62aa7985b0fa10/.images/Full_Workflow2.png?raw=true)
+![All](https://github.com/hkania/TE_Bench/blob/78e0ffe048db59dfe54ee32364316475c1a6c4b5/.images/Full_Workflow2.png?raw=true)
 # Guides
 The [Quickstart Guide](https://github.com/hkania/TE_Bench/blob/main/README.md#quick-start-guide) details how to download and test the associated Snakemake workflows. 
 
